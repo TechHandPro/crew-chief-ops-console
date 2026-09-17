@@ -113,6 +113,9 @@
   .prose-doc > * + * {
     margin-top: 0.85em;
   }
+  .prose-doc > :first-child {
+    margin-top: 0;
+  }
   .prose-doc h1,
   .prose-doc h2,
   .prose-doc h3,

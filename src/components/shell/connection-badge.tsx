@@ -39,7 +39,7 @@ export async function ConnectionBadge() {
           <p className="truncate text-xs font-semibold text-fg">{demo ? "Demo dataset" : connection.systemName}</p>
           <p className="truncate text-[11px] text-fg-muted">{organization}</p>
         </div>
-        <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-bg-subtle px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-fg-muted uppercase">
+        <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-bg-subtle px-1.5 py-0.5 text-[10px] font-medium tracking-wide whitespace-nowrap text-fg-muted uppercase">
           Read-only
         </span>
       </div>
