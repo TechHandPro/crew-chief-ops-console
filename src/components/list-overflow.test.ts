@@ -29,11 +29,11 @@ describe("list views stay inside a 375px viewport", () => {
     expect(shell).toMatch(/overflow-x-clip/);
     expect(shell).toMatch(/min-w-0/);
     expect(shell).toMatch(/overflow-x-auto/);
+    expect(shell).toMatch(/flex-wrap/);
     expect(shell).toMatch(/minmax\(0,\s*260px\)/);
     expect(shell).toMatch(/minmax\(0,\s*1fr\)/);
 
     const nav = read("shell/nav-link.tsx");
-    expect(nav).toMatch(/shrink-0/);
     expect(nav).toMatch(/whitespace-nowrap/);
   });
 

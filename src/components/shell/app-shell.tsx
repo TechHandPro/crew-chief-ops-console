@@ -35,7 +35,7 @@ export function AppShell({ children, showSignOut }: { children: ReactNode; showS
 
           <nav
             aria-label="Primary"
-            className="-mx-1 flex min-w-0 max-w-full gap-1 overflow-x-auto overscroll-x-contain px-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0"
+            className="-mx-1 flex min-w-0 max-w-full flex-wrap gap-1 overflow-x-auto overscroll-x-contain px-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0"
           >
             {NAV.map((item) => (
               <NavLink key={item.href} href={item.href} icon={item.icon}>
