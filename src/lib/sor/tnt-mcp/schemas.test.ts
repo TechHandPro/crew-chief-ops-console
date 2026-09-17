@@ -94,6 +94,25 @@ describe("parseTicketList", () => {
     const result = parseTicketList({ success: true, error: null, tickets: [] });
     expect(result).toEqual([]);
   });
+
+  it("accepts the Overview open_only + small-limit envelope without a success key", () => {
+    const tickets = Array.from({ length: 8 }, (_, index) => ({
+      id: index + 1,
+      title: `Open work ${index + 1}`,
+      status: "In Progress",
+      tags: null,
+    }));
+
+    const result = parseTicketList({ organization_id: 1, open_only: true, tickets });
+    expect(result).toHaveLength(8);
+    expect(result[0]).toMatchObject({ id: 1, title: "Open work 1", tags: [] });
+  });
+
+  it("accepts a bare tickets array (FastMCP subset / fully unwrapped list)", () => {
+    expect(parseTicketList([{ id: 1, title: "Bare" }])).toEqual([
+      expect.objectContaining({ id: 1, title: "Bare", tags: [] }),
+    ]);
+  });
 });
 
 describe("parseTicketDetail", () => {
@@ -184,6 +203,21 @@ describe("parseDocumentList", () => {
 
     expect(result[0]).toMatchObject({ id: 690, isTemplate: false, createdBy: null });
   });
+
+  it("accepts the Overview small-limit envelope without a success key", () => {
+    const documents = Array.from({ length: 6 }, (_, index) => ({
+      id: index + 1,
+      title: `Note ${index + 1}`,
+    }));
+
+    expect(parseDocumentList({ organization_id: 1, documents })).toHaveLength(6);
+  });
+
+  it("accepts a bare documents array", () => {
+    expect(parseDocumentList([{ id: 1, title: "Bare" }])).toEqual([
+      expect.objectContaining({ id: 1, title: "Bare" }),
+    ]);
+  });
 });
 
 describe("parseDocumentDetail", () => {
@@ -270,5 +304,10 @@ describe("parseVaultList", () => {
         entries: [{ ...entry, otp_secret: "JBSWY3DP" }],
       }),
     ).toThrowError(/secret/i);
+  });
+
+  it("accepts a vault listing without a success key and a bare entries array", () => {
+    expect(parseVaultList({ organization_id: 1, entries: [entry] })).toHaveLength(1);
+    expect(parseVaultList([entry])).toEqual([expect.objectContaining({ id: 143, name: "Example Production API" })]);
   });
 });

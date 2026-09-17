@@ -71,6 +71,8 @@ const DEFAULT_TIMEOUT_MS = 20_000;
  *   result is informational: if the repository is not linked (or the resolve
  *   tool fails for a non-auth reason) the client continues with the
  *   configured organization pin instead of blocking every read.
+ * - Tool calls are serialized. Overview `Promise.all`s three lists on a
+ *   cold session; interleaved Streamable HTTP responses lose success+arrays.
  */
 export class TntMcpClient {
   private readonly options: Required<Pick<TntMcpClientOptions, "requestTimeoutMs" | "clientName" | "clientVersion">> &
@@ -79,6 +81,7 @@ export class TntMcpClient {
   private transport: StreamableHTTPClientTransport | null = null;
   private connecting: Promise<void> | null = null;
   private context: ResolvedContext | null = null;
+  private toolQueue: Promise<void> = Promise.resolve();
 
   constructor(options: TntMcpClientOptions) {
     this.options = {
@@ -95,8 +98,11 @@ export class TntMcpClient {
   }
 
   async connect(): Promise<void> {
-    if (this.client) return;
+    // Wait for an in-flight handshake before treating `this.client` as ready.
+    // Marking the client early let ConnectionBadge skip past resolve_repo and
+    // race Overview list calls (TNT #340).
     if (this.connecting) return this.connecting;
+    if (this.client) return;
 
     this.connecting = this.openSession().finally(() => {
       this.connecting = null;
@@ -121,15 +127,26 @@ export class TntMcpClient {
    * when the server-side session expired underneath us).
    */
   async callTool<T>(name: ReadOnlyTool, args: Record<string, unknown>, parse: (payload: unknown) => T): Promise<T> {
-    try {
-      return parseOrBadResponse(name, await this.callOnce(name, args), parse);
-    } catch (error) {
-      if (shouldRetryAfterReconnect(error)) {
-        await this.close();
+    return this.enqueueToolCall(async () => {
+      try {
         return parseOrBadResponse(name, await this.callOnce(name, args), parse);
+      } catch (error) {
+        if (shouldRetryAfterReconnect(error)) {
+          await this.close();
+          return parseOrBadResponse(name, await this.callOnce(name, args), parse);
+        }
+        throw error;
       }
-      throw error;
-    }
+    });
+  }
+
+  private enqueueToolCall<T>(work: () => Promise<T>): Promise<T> {
+    const run = this.toolQueue.then(work, work);
+    this.toolQueue = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
   }
 
   private async callOnce(name: ReadOnlyTool, args: Record<string, unknown>): Promise<unknown> {
@@ -138,7 +155,10 @@ export class TntMcpClient {
     if (!client) {
       throw new SystemOfRecordError("unreachable", "MCP session is not connected.");
     }
+    return this.invokeOn(client, name, args);
+  }
 
+  private async invokeOn(client: Client, name: ReadOnlyTool, args: Record<string, unknown>): Promise<unknown> {
     let result: CallToolResult;
     try {
       result = (await client.callTool({ name, arguments: args }, undefined, {
@@ -176,18 +196,18 @@ export class TntMcpClient {
       throw translateTransportError(error);
     }
 
-    this.client = client;
-    this.transport = transport;
-
     try {
-      this.context = await this.resolveContext();
+      const context = await this.resolveContextOn(client);
+      this.client = client;
+      this.transport = transport;
+      this.context = context;
     } catch (error) {
-      await this.close();
+      await transport.close().catch(() => undefined);
       throw error;
     }
   }
 
-  private async resolveContext(): Promise<ResolvedContext> {
+  private async resolveContextOn(client: Client): Promise<ResolvedContext> {
     const { repoSlug, gitRepositoryId, organizationId } = this.options;
     const pinned: ResolvedContext = {
       routing: "organization_pin",
@@ -207,7 +227,7 @@ export class TntMcpClient {
 
     let payload: unknown;
     try {
-      payload = await this.callOnce("tnt_resolve_repo", args);
+      payload = await this.invokeOn(client, "tnt_resolve_repo", args);
     } catch (error) {
       // Auth and transport failures would break every read, so surface them.
       // Anything else (missing scope, tool-level failure) must not block the
@@ -277,51 +297,41 @@ function describeError(error: unknown): string {
 }
 
 /**
- * Fields the console Zod envelopes (and `tnt_resolve_repo`) put at the top
- * level. FastMCP's `structuredContent` often wraps that object as `{ result: T }`.
+ * Fields that mean we have the actual tool body, not a FastMCP wrapper that
+ * only echoed `success`. `success` alone is not enough — LIVE Overview misses
+ * were `{ result: { success, tickets }, success: true }` (#340).
  */
-const TOOL_PAYLOAD_KEYS = ["success", "tickets", "documents", "entries", "ticket", "document", "linked"] as const;
+const INNER_PAYLOAD_KEYS = ["tickets", "documents", "entries", "ticket", "document", "linked"] as const;
 
-function hasToolPayloadFields(value: Record<string, unknown>): boolean {
-  return TOOL_PAYLOAD_KEYS.some((key) => Object.hasOwn(value, key));
+function hasInnerPayloadFields(value: Record<string, unknown>): boolean {
+  return INNER_PAYLOAD_KEYS.some((key) => Object.hasOwn(value, key));
+}
+
+function isUsableToolPayload(value: unknown): boolean {
+  if (Array.isArray(value)) return true;
+  return isRecord(value) && hasInnerPayloadFields(value);
 }
 
 /**
- * FastMCP (and some MCP SDK servers) put the tool return value under a
- * single `result` key. The console schemas expect the inner object
- * (`success` + `tickets` / `documents` / `entries`, or `linked` for
- * `tnt_resolve_repo`). Prefer that unwrapped object when:
- * - `structuredContent` is exactly `{ result: T }`, or
- * - the top level has no expected fields but `.result` does.
+ * FastMCP puts the tool return under `result`, sometimes with an extra
+ * `success` (or `_meta`) sibling. Peel `.result` until we hit the inner
+ * envelope (`tickets` / `documents` / `entries` / `linked`) or a bare array.
  */
 function unwrapFastMcpStructuredContent(structured: Record<string, unknown>): unknown {
-  if (!Object.hasOwn(structured, "result")) {
-    return structured;
+  let current: unknown = structured;
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (!isRecord(current) || !Object.hasOwn(current, "result")) {
+      return current;
+    }
+    if (hasInnerPayloadFields(current)) {
+      return current;
+    }
+    current = current.result;
   }
-
-  const keys = Object.keys(structured);
-  if (keys.length === 1) {
-    return structured.result;
-  }
-
-  const nested = structured.result;
-  if (isRecord(nested) && !hasToolPayloadFields(structured) && hasToolPayloadFields(nested)) {
-    return nested;
-  }
-
-  return structured;
+  return current;
 }
 
-/**
- * FastMCP returns tool output as a JSON string inside a text content block,
- * and newer servers add `structuredContent` — often wrapped as `{ result: T }`.
- * Prefer the unwrapped structured object; empty structured content falls
- * through to the text JSON payload.
- */
-export function decodeToolResult(result: CallToolResult): unknown {
-  if (result.structuredContent && Object.keys(result.structuredContent).length > 0) {
-    return unwrapFastMcpStructuredContent(result.structuredContent);
-  }
+function decodeTextContent(result: CallToolResult): unknown {
   const text = result.content
     .filter((block): block is Extract<CallToolResult["content"][number], { type: "text" }> => block.type === "text")
     .map((block) => block.text)
@@ -333,6 +343,24 @@ export function decodeToolResult(result: CallToolResult): unknown {
   } catch {
     return text;
   }
+}
+
+/**
+ * FastMCP returns tool output as a JSON string inside a text content block,
+ * and newer servers add `structuredContent` — often wrapped as `{ result: T }`
+ * and sometimes `{ result: T, success: true }`. Prefer an unwrapped structured
+ * object that actually has the list/detail fields; otherwise fall back to the
+ * text JSON (the #323 LIVE payload that already has success+arrays).
+ */
+export function decodeToolResult(result: CallToolResult): unknown {
+  const textPayload = decodeTextContent(result);
+  if (result.structuredContent && Object.keys(result.structuredContent).length > 0) {
+    const unwrapped = unwrapFastMcpStructuredContent(result.structuredContent);
+    if (isUsableToolPayload(unwrapped)) return unwrapped;
+    if (isUsableToolPayload(textPayload)) return textPayload;
+    return unwrapped;
+  }
+  return textPayload;
 }
 
 function translateTransportError(error: unknown): SystemOfRecordError {

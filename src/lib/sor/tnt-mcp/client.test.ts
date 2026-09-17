@@ -66,4 +66,60 @@ describe("decodeToolResult", () => {
     expect(payload).toEqual(ticketList);
     expect(parseTicketList(payload)).toEqual([]);
   });
+
+  it("unwraps { result: T, success: true } so Overview small-limit lists parse", () => {
+    const openOnlyList = {
+      success: true as const,
+      organization_id: 1,
+      open_only: true,
+      tickets: [{ id: 1, title: "Open work", status: "In Progress" }],
+    };
+
+    const payload = decodeToolResult(
+      toolResult({
+        structuredContent: { result: openOnlyList, success: true },
+        text: JSON.stringify(openOnlyList),
+      }),
+    );
+
+    expect(payload).toEqual(openOnlyList);
+    expect(parseTicketList(payload)).toEqual([
+      expect.objectContaining({ id: 1, title: "Open work" }),
+    ]);
+  });
+
+  it("falls back to text JSON when structuredContent is success-only (no arrays)", () => {
+    const payload = decodeToolResult(
+      toolResult({
+        structuredContent: { success: true },
+        text: JSON.stringify(ticketList),
+      }),
+    );
+
+    expect(payload).toEqual(ticketList);
+    expect(parseTicketList(payload)).toEqual([]);
+  });
+
+  it("unwraps a nested result wrapper twice", () => {
+    const payload = decodeToolResult(
+      toolResult({
+        structuredContent: { result: { result: ticketList } },
+      }),
+    );
+
+    expect(payload).toEqual(ticketList);
+    expect(parseTicketList(payload)).toEqual([]);
+  });
+
+  it("unwraps a FastMCP-wrapped document and vault list the same way", () => {
+    const documents = { success: true as const, documents: [{ id: 2, title: "Note" }] };
+    const entries = { success: true as const, entries: [{ id: 3, name: "API" }] };
+
+    expect(
+      decodeToolResult(toolResult({ structuredContent: { result: documents, success: true } })),
+    ).toEqual(documents);
+    expect(
+      decodeToolResult(toolResult({ structuredContent: { result: entries, success: true } })),
+    ).toEqual(entries);
+  });
 });

@@ -11,16 +11,12 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { isOpenStatus } from "@/lib/format";
-import { load } from "@/lib/load";
 import { getSystemOfRecord } from "@/lib/sor";
+import { loadOverviewSummaries } from "@/lib/sor/overview";
 
 export default async function OverviewPage() {
   const sor = getSystemOfRecord();
-  const [tickets, documents, vault] = await Promise.all([
-    load(sor.listTickets({ limit: 8 })),
-    load(sor.listDocuments({ limit: 6 })),
-    load(sor.listVaultEntries()),
-  ]);
+  const { tickets, documents, vault } = await loadOverviewSummaries(sor);
 
   const openCount = tickets.ok ? tickets.data.filter((ticket) => isOpenStatus(ticket.status)).length : null;
   const vaultWithSecrets = vault.ok ? vault.data.filter((entry) => entry.hasPassword).length : null;
