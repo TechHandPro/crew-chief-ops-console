@@ -23,11 +23,9 @@ Solutions).
 - Related incident: **#323** — *Ops Console LIVE: MCP list reads fail after
   sign-in* (child of #320; fixed by pinning `organization_id` on list calls).
 - Shipped: **#320** — v1 read-only console (Resolved).
-- Repository link: **pending**. As of 2026-09-17 `tnt_resolve_repo` returns
-  `action_required: link_repo` for this slug. Reads do not depend on it: pass
-  `organization_id=1` on list tools. Link it in TNT (Organization →
-  Repositories) and then update the `git_repository_id` in the pin file. Until
-  then, comment with `ticket_id=322` (or `323`).
+- Repository link: **linked** on org 1 as of 2026-09-17,
+  `git_repository_id=12`. Pass it on organization-scoped writes. Console reads
+  still do not depend on it: the adapter pins `organization_id` on every list.
 
 ## Related repositories
 
