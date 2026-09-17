@@ -215,7 +215,7 @@ export class TntMcpClient {
       if (error instanceof SystemOfRecordError && (error.kind === "unauthorized" || error.kind === "unreachable")) {
         throw error;
       }
-      return { ...pinned, routingNote: `Repository routing unavailable (${describe(error)}); using the organization pin.` };
+      return { ...pinned, routingNote: `Repository routing unavailable (${describeError(error)}); using the organization pin.` };
     }
 
     const record = isRecord(payload) ? payload : {};
@@ -260,13 +260,13 @@ function parseOrBadResponse<T>(name: ReadOnlyTool, payload: unknown, parse: (pay
     if (error instanceof TntToolError || error instanceof SystemOfRecordError) throw error;
     throw new SystemOfRecordError(
       "bad_response",
-      `TNT tool ${name} returned a payload this console does not understand: ${describe(error)}`,
+      `TNT tool ${name} returned a payload this console does not understand: ${describeError(error)}`,
       { cause: error },
     );
   }
 }
 
-function describe(error: unknown): string {
+function describeError(error: unknown): string {
   if (error instanceof ZodError) {
     return error.issues
       .slice(0, 3)
