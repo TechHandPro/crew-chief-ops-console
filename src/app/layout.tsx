@@ -1,15 +1,27 @@
 import type { Metadata, Viewport } from "next";
 
+import { DEFAULT_BRAND_NAME, getConfig } from "@/lib/config";
+
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "CREW CHIEF Ops Console",
-    template: "%s · CREW CHIEF Ops Console",
-  },
-  description: "Read-only audit window over the ops crew's tickets, documents, and vault metadata.",
-  robots: { index: false, follow: false },
-};
+export function generateMetadata(): Metadata {
+  // Build steps and misconfigured deploys must still render a title; the
+  // gated pages report the configuration error themselves.
+  let brandName = DEFAULT_BRAND_NAME;
+  try {
+    brandName = getConfig().brandName;
+  } catch {
+    // fall back to the template default
+  }
+  return {
+    title: {
+      default: brandName,
+      template: `%s · ${brandName}`,
+    },
+    description: "Read-only audit window over the ops crew's tickets, documents, and vault metadata.",
+    robots: { index: false, follow: false },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [

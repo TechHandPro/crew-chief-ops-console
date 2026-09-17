@@ -1,9 +1,9 @@
 /**
  * Domain model for the Ops Console.
  *
- * These types are the console's own vocabulary. Providers (TNT MCP today,
- * other systems of record later) translate their wire formats into these
- * shapes, so the UI never depends on a vendor payload.
+ * These types are the console's own vocabulary. Adapters (the fixture
+ * dataset, the TNT MCP adapter, or one you write) translate their wire
+ * formats into these shapes, so the UI never depends on a vendor payload.
  *
  * Everything here is read-only by design: there are no mutation types.
  */
@@ -110,10 +110,20 @@ export interface VaultListQuery {
   ticketId?: number;
 }
 
+/**
+ * How the adapter scopes reads to a tenant.
+ *
+ * - `organization`: reads are pinned to a configured organization id.
+ * - `repository`: the adapter additionally confirmed a linked source
+ *   repository (informational; reads stay organization-pinned).
+ * - `demo`: the built-in fixture dataset.
+ */
+export type RoutingMode = "organization" | "repository" | "demo";
+
 export interface ConnectionInfo {
   /** Machine id of the provider, e.g. "tnt-mcp" or "fixtures". */
-  provider: "tnt-mcp" | "fixtures";
-  /** Human label for the system of record, e.g. "TNT". */
+  provider: string;
+  /** Human label for the system of record shown in the connection badge. */
   systemName: string;
   /** Public web base URL of the system of record used for deep links. */
   webBaseUrl: string | null;
@@ -121,5 +131,8 @@ export interface ConnectionInfo {
   organizationName: string | null;
   /** Where reads come from, for the connection badge. */
   endpoint: string | null;
+  routing: RoutingMode;
+  /** Operator-facing note when routing degraded (e.g. repository not linked). Never contains secrets. */
+  routingNote: string | null;
   readOnly: true;
 }

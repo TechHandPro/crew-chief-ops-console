@@ -62,17 +62,23 @@ export class TntMcpProvider implements SystemOfRecord {
     const context = this.client.resolvedContext;
     return {
       provider: "tnt-mcp",
-      systemName: "TNT",
+      systemName: this.config.systemName,
       webBaseUrl: this.config.webBaseUrl,
       organizationId: context?.organizationId ?? this.config.organizationId,
       organizationName: context?.organizationName ?? null,
       endpoint: this.config.mcpUrl,
+      routing: context?.routing === "repository" ? "repository" : "organization",
+      routingNote: context?.routingNote ?? null,
       readOnly: true,
     };
   }
 
   listTickets(query: TicketListQuery = {}): Promise<TicketSummary[]> {
+    // Organization pin (TNT #316): listing works without a linked GitHub
+    // repository or a prior tnt_resolve_repo, and never depends on
+    // server-side session context that may have expired.
     const args: Record<string, unknown> = {
+      organization_id: this.config.organizationId,
       limit: clampLimit(query.limit),
       open_only: query.openOnly ?? true,
     };
@@ -91,7 +97,10 @@ export class TntMcpProvider implements SystemOfRecord {
   }
 
   listDocuments(query: DocumentListQuery = {}): Promise<DocumentSummary[]> {
-    const args: Record<string, unknown> = { limit: clampLimit(query.limit) };
+    const args: Record<string, unknown> = {
+      organization_id: this.config.organizationId,
+      limit: clampLimit(query.limit),
+    };
     if (query.search) args.search = query.search;
     if (query.category) args.category = query.category;
     if (query.ticketId) args.ticket_id = query.ticketId;

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 /**
  * Liveness/readiness probe for deploys. Reports configuration validity and
  * which provider is active. It deliberately does not call the system of
- * record: a TNT outage should not flap the console's own health check.
+ * record: an upstream outage should not flap the console's own health check.
  */
 export function GET(): NextResponse {
   try {

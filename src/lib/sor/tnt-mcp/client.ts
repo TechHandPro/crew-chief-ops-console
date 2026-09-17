@@ -5,6 +5,7 @@ import {
   StreamableHTTPError,
 } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { ZodError } from "zod";
 
 import { SystemOfRecordError } from "../provider";
 import { TntToolError } from "./schemas";
@@ -37,8 +38,22 @@ export interface TntMcpClientOptions {
   clientVersion?: string;
 }
 
+/**
+ * How ticket/document reads are routed to an organization.
+ *
+ * - `organization_pin`: every list call carries `organization_id` from
+ *   configuration. Works without a linked GitHub repository (TNT #316).
+ * - `repository`: a repo pin was configured *and* TNT confirmed the link, so
+ *   the session also knows the repository and work ticket. List calls still
+ *   carry `organization_id`; the extra context is informational.
+ */
+export type RoutingMode = "organization_pin" | "repository";
+
 export interface ResolvedContext {
-  organizationId: number | null;
+  routing: RoutingMode;
+  /** Why routing fell back to the organization pin, when a repo pin was configured. */
+  routingNote: string | null;
+  organizationId: number;
   organizationName: string | null;
   gitRepositoryId: number | null;
   workTicketId: number | null;
@@ -52,8 +67,10 @@ const DEFAULT_TIMEOUT_MS = 20_000;
  * - Streamable HTTP transport with a Bearer org API key (the same header
  *   Cursor Desktop and Cursor Automations use against TNT).
  * - One lazily-opened session per process; reconnects once on transport loss.
- * - On connect, calls `tnt_resolve_repo` when a repo pin is configured so
- *   later ticket/document reads route to the right organization.
+ * - On connect, calls `tnt_resolve_repo` when a repo pin is configured. The
+ *   result is informational: if the repository is not linked (or the resolve
+ *   tool fails for a non-auth reason) the client continues with the
+ *   configured organization pin instead of blocking every read.
  */
 export class TntMcpClient {
   private readonly options: Required<Pick<TntMcpClientOptions, "requestTimeoutMs" | "clientName" | "clientVersion">> &
@@ -105,11 +122,11 @@ export class TntMcpClient {
    */
   async callTool<T>(name: ReadOnlyTool, args: Record<string, unknown>, parse: (payload: unknown) => T): Promise<T> {
     try {
-      return parse(await this.callOnce(name, args));
+      return parseOrBadResponse(name, await this.callOnce(name, args), parse);
     } catch (error) {
       if (shouldRetryAfterReconnect(error)) {
         await this.close();
-        return parse(await this.callOnce(name, args));
+        return parseOrBadResponse(name, await this.callOnce(name, args), parse);
       }
       throw error;
     }
@@ -172,24 +189,91 @@ export class TntMcpClient {
 
   private async resolveContext(): Promise<ResolvedContext> {
     const { repoSlug, gitRepositoryId, organizationId } = this.options;
+    const pinned: ResolvedContext = {
+      routing: "organization_pin",
+      routingNote: null,
+      organizationId,
+      organizationName: null,
+      gitRepositoryId: null,
+      workTicketId: null,
+    };
     if (!repoSlug && !gitRepositoryId) {
-      return { organizationId, organizationName: null, gitRepositoryId: null, workTicketId: null };
+      return pinned;
     }
 
     const args: Record<string, unknown> = { organization_id: organizationId };
     if (repoSlug) args.repo_slug = repoSlug;
     if (gitRepositoryId) args.git_repository_id = gitRepositoryId;
 
-    const payload = await this.callOnce("tnt_resolve_repo", args);
+    let payload: unknown;
+    try {
+      payload = await this.callOnce("tnt_resolve_repo", args);
+    } catch (error) {
+      // Auth and transport failures would break every read, so surface them.
+      // Anything else (missing scope, tool-level failure) must not block the
+      // organization-pinned list path.
+      if (error instanceof SystemOfRecordError && (error.kind === "unauthorized" || error.kind === "unreachable")) {
+        throw error;
+      }
+      return { ...pinned, routingNote: `Repository routing unavailable (${describeError(error)}); using the organization pin.` };
+    }
+
     const record = isRecord(payload) ? payload : {};
+    const actionRequired = pickString(record, ["action_required"]);
+    if (record.linked === false || record.success === false || actionRequired) {
+      const detail = pickString(record, ["reason", "error", "message"]) ?? actionRequired ?? "repository is not linked";
+      return {
+        ...pinned,
+        organizationName: pickString(record, ["home_organization_name", "primary_organization_name"]),
+        routingNote: `Repository ${repoSlug ?? `#${gitRepositoryId}`} is not linked in the system of record (${detail}); using the organization pin.`,
+      };
+    }
+
+    const resolvedOrganizationId = pickInt(record, ["client_organization_id", "target_organization_id", "organization_id"]);
+    if (resolvedOrganizationId !== null && resolvedOrganizationId !== organizationId) {
+      // Reads are pinned to the configured organization; a repository that
+      // resolves elsewhere is a configuration mismatch worth showing, not a
+      // reason to silently switch tenants.
+      return {
+        ...pinned,
+        routingNote:
+          `Repository ${repoSlug ?? `#${gitRepositoryId}`} resolves to organization #${resolvedOrganizationId}, ` +
+          `but reads are pinned to organization #${organizationId}.`,
+      };
+    }
 
     return {
-      organizationId: pickInt(record, ["client_organization_id", "target_organization_id", "organization_id"]) ?? organizationId,
+      routing: "repository",
+      routingNote: null,
+      organizationId,
       organizationName: pickString(record, ["client_organization_name", "organization_name", "home_organization_name"]),
       gitRepositoryId: pickInt(record, ["git_repository_id", "repo_id"]) ?? gitRepositoryId,
       workTicketId: pickInt(record, ["work_ticket_id"]),
     };
   }
+}
+
+function parseOrBadResponse<T>(name: ReadOnlyTool, payload: unknown, parse: (payload: unknown) => T): T {
+  try {
+    return parse(payload);
+  } catch (error) {
+    if (error instanceof TntToolError || error instanceof SystemOfRecordError) throw error;
+    throw new SystemOfRecordError(
+      "bad_response",
+      `TNT tool ${name} returned a payload this console does not understand: ${describeError(error)}`,
+      { cause: error },
+    );
+  }
+}
+
+function describeError(error: unknown): string {
+  if (error instanceof ZodError) {
+    return error.issues
+      .slice(0, 3)
+      .map((issue) => `${issue.path.join(".") || "$"}: ${issue.message}`)
+      .join("; ");
+  }
+  return error instanceof Error ? error.message : String(error);
 }
 
 /**

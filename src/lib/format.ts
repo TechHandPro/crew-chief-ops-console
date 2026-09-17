@@ -21,7 +21,7 @@ const dateOnly = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
 });
 
-/** TNT emits naive timestamps (no zone). Treat them as UTC. */
+/** Some systems of record emit naive timestamps (no zone). Treat those as UTC. */
 export function parseTimestamp(value: string | null | undefined): Date | null {
   if (!value) return null;
   const normalized = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value) ? value : `${value}Z`;

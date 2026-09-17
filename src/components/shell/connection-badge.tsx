@@ -1,4 +1,4 @@
-import { Database, FlaskConical, Unplug } from "lucide-react";
+import { Database, FlaskConical, Info, Unplug } from "lucide-react";
 
 import { load } from "@/lib/load";
 import { getSystemOfRecord } from "@/lib/sor";
@@ -24,7 +24,7 @@ export async function ConnectionBadge() {
   }
 
   const connection = result.data;
-  const demo = connection.provider === "fixtures";
+  const demo = connection.routing === "demo";
   const Icon = demo ? FlaskConical : Database;
   const organization =
     connection.organizationName ?? (connection.organizationId ? `Organization #${connection.organizationId}` : "Unpinned");
@@ -36,7 +36,7 @@ export async function ConnectionBadge() {
           <Icon className="size-4" aria-hidden />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-fg">{demo ? "Demo dataset" : connection.systemName}</p>
+          <p className="truncate text-xs font-semibold text-fg">{connection.systemName}</p>
           <p className="truncate text-[11px] text-fg-muted">{organization}</p>
         </div>
         <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-bg-subtle px-1.5 py-0.5 text-[10px] font-medium tracking-wide whitespace-nowrap text-fg-muted uppercase">
@@ -46,6 +46,15 @@ export async function ConnectionBadge() {
       {connection.endpoint ? (
         <p className="mt-1.5 truncate font-mono text-[11px] text-fg-faint" title={connection.endpoint}>
           {connection.endpoint}
+        </p>
+      ) : null}
+      {demo ? (
+        <p className="mt-1.5 text-[11px] text-fg-muted">Fictional data, no credentials. Connect a system of record to see real work.</p>
+      ) : null}
+      {connection.routingNote ? (
+        <p className="mt-1.5 flex items-start gap-1 text-[11px] text-warning" title={connection.routingNote}>
+          <Info className="mt-px size-3 shrink-0" aria-hidden />
+          <span className="line-clamp-3">{connection.routingNote}</span>
         </p>
       ) : null}
     </div>

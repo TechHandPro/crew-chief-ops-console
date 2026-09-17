@@ -69,6 +69,31 @@ describe("parseTicketList", () => {
       }),
     ).toThrowError(TntToolError);
   });
+
+  it("treats a failure envelope without a success key as a tool failure, not a schema mismatch", () => {
+    let caught: unknown;
+    try {
+      parseTicketList({
+        error: "Repository TechHandPro/example is not linked to an organization.",
+        action_required: "link_repo",
+        hint: "Pass organization_id.",
+      });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(TntToolError);
+    expect((caught as TntToolError).message).toMatch(/not linked/);
+    expect((caught as TntToolError).actionRequired).toBe("link_repo");
+  });
+
+  it("rejects a success envelope that lacks the tickets array", () => {
+    expect(() => parseTicketList({ success: true, organization_id: 1 })).toThrowError(/tickets/);
+  });
+
+  it("does not mistake a record that merely has a null error field for a failure", () => {
+    const result = parseTicketList({ success: true, error: null, tickets: [] });
+    expect(result).toEqual([]);
+  });
 });
 
 describe("parseTicketDetail", () => {

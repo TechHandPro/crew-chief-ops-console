@@ -14,7 +14,7 @@ import type {
 import { FIXTURE_DOCUMENTS, FIXTURE_ORGANIZATION, FIXTURE_TICKETS, FIXTURE_VAULT, toDocumentSummary } from "./data";
 
 const CLOSED_STATUSES = new Set(["resolved", "closed", "done", "cancelled", "canceled"]);
-const DEMO_WEB_BASE_URL = "https://tnt.example";
+const DEMO_WEB_BASE_URL = "https://sor.example";
 
 /**
  * In-memory system of record backed by the fixture dataset. Lets anyone run
@@ -36,6 +36,8 @@ export class FixturesProvider implements SystemOfRecord {
       organizationId: FIXTURE_ORGANIZATION.id,
       organizationName: FIXTURE_ORGANIZATION.name,
       endpoint: null,
+      routing: "demo",
+      routingNote: null,
       readOnly: true,
     };
   }

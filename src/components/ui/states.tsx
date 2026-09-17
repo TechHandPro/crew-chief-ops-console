@@ -26,21 +26,25 @@ export function EmptyState({
   );
 }
 
+/**
+ * Provider-neutral copy. The adapter's own message (shown beneath) names the
+ * concrete system and any environment variable an operator should check.
+ */
 const ERROR_COPY: Record<SystemOfRecordError["kind"], { icon: LucideIcon; title: string; hint: string }> = {
   unreachable: {
     icon: PlugZap,
     title: "Can't reach the system of record",
-    hint: "The MCP endpoint did not answer. Check TNT_MCP_URL, network egress from this host, and that the TNT MCP service is running.",
+    hint: "The MCP endpoint did not answer. Check the configured endpoint URL, network egress from this host, and that the MCP service is running.",
   },
   unauthorized: {
     icon: KeyRound,
     title: "The system of record rejected our API key",
-    hint: "TNT returned 401. Rotate or re-issue the organization API key referenced by TNT_MCP_API_KEY and restart the console.",
+    hint: "The endpoint returned 401. Rotate or re-issue the API key configured for this console and restart it.",
   },
   forbidden: {
     icon: ShieldAlert,
-    title: "The API key is missing a scope",
-    hint: "Grant the read scopes (mcp:tickets:read, mcp:docs:read, mcp:vault:read) on the existing key without rotating it.",
+    title: "The API key is missing a permission",
+    hint: "Grant the read scopes this console needs on the existing key (see the adapter's README section) without rotating it.",
   },
   bad_response: {
     icon: AlertTriangle,
@@ -50,7 +54,7 @@ const ERROR_COPY: Record<SystemOfRecordError["kind"], { icon: LucideIcon; title:
   upstream: {
     icon: AlertTriangle,
     title: "The system of record reported an error",
-    hint: "The tool call completed but TNT returned a failure. The message from TNT is shown below.",
+    hint: "The tool call completed but the system of record returned a failure. Its message is shown below.",
   },
 };
 
