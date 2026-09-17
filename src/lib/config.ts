@@ -21,9 +21,13 @@ export type ProviderKind = "tnt-mcp" | "fixtures";
 export interface TntConfig {
   mcpUrl: string;
   apiKey: string;
+  /** Tenant pin sent as `organization_id` on every list call. */
   organizationId: number;
+  /** Optional repository pin; informational since lists are organization-pinned. */
   gitRepositoryId: number | null;
   repoSlug: string | null;
+  /** Human label for the system of record in the connection badge. */
+  systemName: string;
   webBaseUrl: string;
   ticketUrlTemplate: string;
   documentUrlTemplate: string;
@@ -46,9 +50,21 @@ export interface AppConfig {
   provider: ProviderKind;
   tnt: TntConfig | null;
   access: AccessConfig;
+  /** Product name shown in the shell, sign-in page, and document titles. */
   brandName: string;
+  /** Short line under the product name in the shell and on sign-in. */
+  brandTagline: string;
 }
 
+/**
+ * Generic defaults. The public template ships as "CREW CHIEF Ops Console";
+ * a deployment (for example TechHand's dogfood instance) re-labels itself
+ * through OPS_CONSOLE_BRAND_NAME / OPS_CONSOLE_BRAND_TAGLINE only.
+ */
+export const DEFAULT_BRAND_NAME = "CREW CHIEF Ops Console";
+export const DEFAULT_BRAND_TAGLINE = "Audit what the crew writes";
+
+const DEFAULT_TNT_SYSTEM_NAME = "TNT";
 const DEFAULT_TNT_MCP_URL = "https://ai.techhand.pro/mcp";
 const DEFAULT_TNT_WEB_BASE_URL = "https://ai.techhand.pro";
 const MIN_SECRET_LENGTH = 16;
@@ -63,6 +79,7 @@ const envSchema = z.object({
   TNT_GIT_REPOSITORY_ID: z.coerce.number().int().positive().optional(),
   TNT_REPO_SLUG: z.string().trim().min(1).optional(),
   TNT_WEB_BASE_URL: z.string().trim().min(1).default(DEFAULT_TNT_WEB_BASE_URL),
+  SOR_SYSTEM_NAME: z.string().trim().min(1).optional(),
   SOR_TICKET_URL_TEMPLATE: z.string().trim().min(1).default("/tickets/{id}"),
   SOR_DOCUMENT_URL_TEMPLATE: z.string().trim().min(1).default("/documents/{id}/edit"),
   SOR_VAULT_URL_TEMPLATE: z.string().trim().min(1).default("/vault"),
@@ -71,7 +88,8 @@ const envSchema = z.object({
   OPS_CONSOLE_SESSION_SECRET: z.string().trim().min(1).optional(),
   OPS_CONSOLE_SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(168).default(12),
   OPS_CONSOLE_ALLOW_ANONYMOUS: z.string().trim().optional(),
-  OPS_CONSOLE_BRAND_NAME: z.string().trim().min(1).default("CREW CHIEF Ops Console"),
+  OPS_CONSOLE_BRAND_NAME: z.string().trim().min(1).default(DEFAULT_BRAND_NAME),
+  OPS_CONSOLE_BRAND_TAGLINE: z.string().trim().min(1).default(DEFAULT_BRAND_TAGLINE),
 });
 
 type RawEnv = Record<string, string | undefined>;
@@ -157,6 +175,7 @@ function resolveTnt(env: z.infer<typeof envSchema>): TntConfig {
     organizationId: env.TNT_ORGANIZATION_ID,
     gitRepositoryId: env.TNT_GIT_REPOSITORY_ID ?? null,
     repoSlug: env.TNT_REPO_SLUG ?? null,
+    systemName: env.SOR_SYSTEM_NAME ?? DEFAULT_TNT_SYSTEM_NAME,
     webBaseUrl: assertHttpsOrLoopback("TNT_WEB_BASE_URL", env.TNT_WEB_BASE_URL),
     ticketUrlTemplate: env.SOR_TICKET_URL_TEMPLATE,
     documentUrlTemplate: env.SOR_DOCUMENT_URL_TEMPLATE,
@@ -187,6 +206,7 @@ export function loadConfig(raw: RawEnv = process.env): AppConfig {
     tnt: provider === "tnt-mcp" ? resolveTnt(env) : null,
     access: resolveAccess(env),
     brandName: env.OPS_CONSOLE_BRAND_NAME,
+    brandTagline: env.OPS_CONSOLE_BRAND_TAGLINE,
   };
 }
 

@@ -31,12 +31,36 @@ describe("loadConfig", () => {
     expect(config.access.mode).toBe("token");
   });
 
+  it("accepts an organization pin without any repository pin", () => {
+    const { TNT_GIT_REPOSITORY_ID: _repoId, TNT_REPO_SLUG: _slug, ...env } = liveEnv;
+    const config = loadConfig(env);
+
+    expect(config.tnt).toMatchObject({ organizationId: 1, gitRepositoryId: null, repoSlug: null });
+  });
+
   it("defaults to fixtures with anonymous access outside production", () => {
     const config = loadConfig({ NODE_ENV: "development" });
 
     expect(config.provider).toBe("fixtures");
     expect(config.access.mode).toBe("anonymous");
     expect(config.tnt).toBeNull();
+  });
+
+  it("ships generic branding by default and lets a deployment re-label itself", () => {
+    const generic = loadConfig({ NODE_ENV: "development" });
+    expect(generic.brandName).toBe("CREW CHIEF Ops Console");
+    expect(generic.brandTagline).toBe("Audit what the crew writes");
+
+    const dogfood = loadConfig({
+      ...liveEnv,
+      OPS_CONSOLE_BRAND_NAME: "Example Ops Console",
+      OPS_CONSOLE_BRAND_TAGLINE: "Internal dogfood",
+      SOR_SYSTEM_NAME: "Example SoR",
+    });
+    expect(dogfood.brandName).toBe("Example Ops Console");
+    expect(dogfood.brandTagline).toBe("Internal dogfood");
+    expect(dogfood.tnt?.systemName).toBe("Example SoR");
+    expect(loadConfig(liveEnv).tnt?.systemName).toBe("TNT");
   });
 
   it("fails closed in production when no access token is configured", () => {

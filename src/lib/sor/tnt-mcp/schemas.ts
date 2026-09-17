@@ -33,19 +33,26 @@ export class TntToolError extends Error {
 const nullableString = z.string().nullable().optional();
 const nullableInt = z.number().int().nullable().optional();
 
+/**
+ * TNT failure envelopes come in two shapes: `{ success: false, error, … }`
+ * from tool bodies, and `{ error, action_required, … }` without a `success`
+ * key from routing guards. Both must surface as a tool failure with the
+ * server's message rather than as a schema mismatch.
+ */
 const failureEnvelope = z.looseObject({
-  success: z.literal(false),
-  error: z.string().optional(),
+  success: z.boolean().optional(),
+  error: z.string().nullable().optional(),
   action_required: z.string().nullable().optional(),
+  message: z.string().nullable().optional(),
 });
 
 function assertSuccess(input: unknown): void {
-  const failure = failureEnvelope.safeParse(input);
-  if (failure.success) {
-    throw new TntToolError(
-      failure.data.error ?? "The system of record reported a failure.",
-      failure.data.action_required ?? null,
-    );
+  const parsed = failureEnvelope.safeParse(input);
+  if (!parsed.success) return;
+  const { success, error, action_required, message } = parsed.data;
+  const failed = success === false || (success !== true && (typeof error === "string" || typeof action_required === "string"));
+  if (failed) {
+    throw new TntToolError(error ?? message ?? "The system of record reported a failure.", action_required ?? null);
   }
 }
 

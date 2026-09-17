@@ -17,7 +17,7 @@ const NAV: Array<{ href: Route; label: string; icon: ReactNode }> = [
 ];
 
 export function AppShell({ children, showSignOut }: { children: ReactNode; showSignOut: boolean }) {
-  const { brandName } = getConfig();
+  const { brandName, brandTagline } = getConfig();
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[260px_1fr]">
@@ -29,7 +29,7 @@ export function AppShell({ children, showSignOut }: { children: ReactNode; showS
             </span>
             <span className="leading-tight">
               <span className="block text-sm font-semibold tracking-tight text-fg">{brandName}</span>
-              <span className="block text-[11px] text-fg-muted">Audit what the crew writes</span>
+              <span className="block text-[11px] text-fg-muted">{brandTagline}</span>
             </span>
           </Link>
 

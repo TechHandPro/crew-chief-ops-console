@@ -19,7 +19,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
   const params = await searchParams;
   const rawNext = typeof params.next === "string" ? params.next : "/";
   const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
-  const { brandName } = getConfig();
+  const { brandName, brandTagline } = getConfig();
 
   return (
     <main className="grid min-h-dvh place-items-center px-4 py-10">
@@ -30,7 +30,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
           </span>
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-fg">{brandName}</h1>
-            <p className="text-sm text-fg-muted">Read-only window into the crew&apos;s work.</p>
+            <p className="text-sm text-fg-muted">{brandTagline}</p>
           </div>
         </div>
 
