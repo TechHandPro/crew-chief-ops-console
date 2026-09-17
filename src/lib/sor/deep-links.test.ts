@@ -17,6 +17,21 @@ describe("createDeepLinks", () => {
 
   it("supports templates without an id placeholder", () => {
     expect(links.vaultEntry(158)).toBe("https://tnt.example.test/vault");
+    expect(links.vaultIndex()).toBe("https://tnt.example.test/vault");
+  });
+
+  it("derives the vault index from per-entry templates", () => {
+    const perEntry = (vaultUrlTemplate: string) =>
+      createDeepLinks({
+        webBaseUrl: "https://tnt.example.test",
+        ticketUrlTemplate: "/tickets/{id}",
+        documentUrlTemplate: "/documents/{id}",
+        vaultUrlTemplate,
+      }).vaultIndex();
+
+    expect(perEntry("/vault/{id}")).toBe("https://tnt.example.test/vault");
+    expect(perEntry("/vault/{id}/view")).toBe("https://tnt.example.test/vault");
+    expect(perEntry("/vault?entry={id}")).toBe("https://tnt.example.test/vault");
   });
 
   it("supports absolute templates that point at another host", () => {

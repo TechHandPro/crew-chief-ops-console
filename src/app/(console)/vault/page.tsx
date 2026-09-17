@@ -46,7 +46,7 @@ export default async function VaultPage({ searchParams }: PageProps<"/vault">) {
         eyebrow="Vault"
         title="Vault entries"
         description="Titles and metadata for credentials the crew recorded. This console has no reveal capability: secrets stay gated in the system of record."
-        actions={<DeepLink href={sor.links.vaultEntry(0)} label="Open vault in system of record" />}
+        actions={<DeepLink href={sor.links.vaultIndex()} label="Open vault in system of record" />}
       />
 
       <div className="flex items-start gap-3 rounded-xl border border-success/20 bg-success-soft/60 px-4 py-3 text-sm">
