@@ -70,9 +70,11 @@ class FakeTnt {
       }
     }
 
-    const transport = new StreamableHTTPServerTransport({
+    const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
-      onsessioninitialized: (id) => this.transports.set(id, transport),
+      onsessioninitialized: (id: string) => {
+        this.transports.set(id, transport);
+      },
     });
     const server = this.buildServer(() => transport.sessionId ?? "");
     await server.connect(transport);
