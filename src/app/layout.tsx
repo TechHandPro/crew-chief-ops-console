@@ -24,6 +24,8 @@ export function generateMetadata(): Metadata {
 }
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f6f5f2" },
     { media: "(prefers-color-scheme: dark)", color: "#0e1013" },
@@ -32,8 +34,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="flex min-h-full flex-col">{children}</body>
+    <html lang="en" className="h-full overflow-x-clip antialiased">
+      <body className="flex min-h-full max-w-full flex-col overflow-x-clip">{children}</body>
     </html>
   );
 }

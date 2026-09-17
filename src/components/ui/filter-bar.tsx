@@ -23,11 +23,11 @@ export function FilterBar({
   children?: ReactNode;
 }) {
   return (
-    <form action={action} method="get" className="flex flex-wrap items-center gap-2">
+    <form action={action} method="get" className="flex w-full min-w-0 flex-wrap items-center gap-2">
       {Object.entries(hidden).map(([name, value]) =>
         value ? <input key={name} type="hidden" name={name} value={value} /> : null,
       )}
-      <label className="relative min-w-0 flex-1 basis-64">
+      <label className="relative min-w-0 w-full flex-1 basis-full sm:basis-64">
         <span className="sr-only">Search</span>
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-faint" aria-hidden />
         <input
@@ -41,7 +41,7 @@ export function FilterBar({
       {children}
       <button
         type="submit"
-        className="rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-fg shadow-sm transition hover:bg-bg-subtle"
+        className="shrink-0 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-fg shadow-sm transition hover:bg-bg-subtle"
       >
         Apply
       </button>
@@ -57,7 +57,7 @@ export function SegmentedLinks({
   current: string;
 }) {
   return (
-    <div role="group" className="inline-flex rounded-lg border border-border bg-bg-elevated p-0.5 shadow-sm">
+    <div role="group" className="flex max-w-full min-w-0 flex-wrap rounded-lg border border-border bg-bg-elevated p-0.5 shadow-sm">
       {options.map((option) => (
         <Link
           key={option.value}

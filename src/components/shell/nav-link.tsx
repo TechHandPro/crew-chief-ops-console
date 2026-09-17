@@ -16,7 +16,7 @@ export function NavLink({ href, icon, children }: { href: Route; icon: ReactNode
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition",
+        "group flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition lg:w-full",
         active ? "bg-bg-elevated text-fg shadow-card" : "text-fg-muted hover:bg-bg-elevated/70 hover:text-fg",
       )}
     >

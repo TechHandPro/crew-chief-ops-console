@@ -20,20 +20,23 @@ export function AppShell({ children, showSignOut }: { children: ReactNode; showS
   const { brandName, brandTagline } = getConfig();
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[260px_1fr]">
-      <aside className="border-b border-border bg-bg-subtle/60 lg:sticky lg:top-0 lg:h-dvh lg:border-r lg:border-b-0">
-        <div className="flex h-full flex-col gap-6 px-4 py-4 lg:px-4 lg:py-6">
-          <Link href="/" className="flex items-center gap-2.5 px-1">
-            <span className="grid size-8 place-items-center rounded-lg bg-accent text-accent-fg shadow-sm">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
+      <aside className="min-w-0 border-b border-border bg-bg-subtle/60 lg:sticky lg:top-0 lg:h-dvh lg:border-r lg:border-b-0">
+        <div className="flex h-full min-w-0 flex-col gap-6 px-4 py-4 lg:px-4 lg:py-6">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5 px-1">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-fg shadow-sm">
               <HardHat className="size-4.5" aria-hidden />
             </span>
-            <span className="leading-tight">
-              <span className="block text-sm font-semibold tracking-tight text-fg">{brandName}</span>
-              <span className="block text-[11px] text-fg-muted">{brandTagline}</span>
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate text-sm font-semibold tracking-tight text-fg">{brandName}</span>
+              <span className="block truncate text-[11px] text-fg-muted">{brandTagline}</span>
             </span>
           </Link>
 
-          <nav aria-label="Primary" className="flex gap-1 overflow-x-auto lg:flex-col">
+          <nav
+            aria-label="Primary"
+            className="-mx-1 flex min-w-0 max-w-full gap-1 overflow-x-auto overscroll-x-contain px-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0"
+          >
             {NAV.map((item) => (
               <NavLink key={item.href} href={item.href} icon={item.icon}>
                 {item.label}
@@ -62,8 +65,8 @@ export function AppShell({ children, showSignOut }: { children: ReactNode; showS
         </div>
       </aside>
 
-      <main className="min-w-0">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">{children}</div>
+      <main className="min-w-0 overflow-x-clip">
+        <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">{children}</div>
       </main>
     </div>
   );
