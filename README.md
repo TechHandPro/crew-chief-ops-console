@@ -30,11 +30,18 @@ and secrets are env-only; they are never required defaults.
 | Tickets | search, open/all toggle, status & priority badges | Markdown description, comment history, linked docs and vault entries | `SOR_TICKET_URL_TEMPLATE` |
 | Documents | search, category chips, per-ticket filter | rendered Markdown (HTML skipped), front-matter panel | `SOR_DOCUMENT_URL_TEMPLATE` |
 | Vault | search, category chips, has-secret / OTP indicators | metadata, notes, linked tickets/contact/asset/domain/network | `SOR_VAULT_URL_TEMPLATE` |
+| Audit | search actor / action / resource | demo who/what rows (fixtures only) | fixtures host `sor.example` only — production ticket/vault deep links are held |
 
 Vault views are **metadata only** by construction: the interface has no
 method that returns a secret, adapters have no code path to a reveal tool,
 and the console refuses to render a vault payload that unexpectedly contains
 a `password`/`secret` field.
+
+`/audit` is a **fixtures preview**. It always renders the built-in demo
+who/what rows, even when the rest of the console is connected to a live
+system of record. Resource links on that page point at `https://sor.example`
+only. Live audit reads and production ticket/document/vault deep links are
+not wired.
 
 ## Try it in two minutes (no credentials)
 
@@ -203,6 +210,7 @@ src/
   lib/auth/              session tokens, access helpers, failure limiter
   lib/sor/               SystemOfRecord contract, deep links, memo cache
   lib/sor/fixtures/      demo dataset adapter (default; fictional 9000–9999 ids)
+  lib/audit/             fixtures-only audit preview (not a live SoR read)
   proxy.ts               auth redirect + security headers
 docs/public-pack.md           public pack vs dogfood + deny-list
 docs/DEPLOY_OPS_CONSOLE.md    deploy skill: Desktop+localhost, optional ops.local, later VPS (not WSL2)
@@ -220,5 +228,7 @@ system of record cannot read as required.
 
 - Creating or editing tickets, documents, or vault entries
 - Revealing secrets
+- Live system-of-record audit history (the `/audit` page is a fixtures preview)
+- Production ticket/document/vault deep links from `/audit`
 - Replacing the middleware with a UI
 - Browser automation as a data path

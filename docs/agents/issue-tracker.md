@@ -7,7 +7,7 @@ GitHub Issues, not Linear, not Jira, not scratch files.
 
 1. `tnt_resolve_repo(repo_slug="TechHandPro/crew-chief-ops-console")` to map
    this repository to its TNT organization and work ticket.
-2. Read [`docs/TNT_TICKET.md`](../TNT_TICKET.md) for the pinned ticket.
+2. Read [`docs/TNT_TICKET.md`](../TNT_TICKET.md) for the pinned ticket (#331).
 3. `tnt_resolve_work_ticket(allow_create=false)`.
 4. Pass `git_repository_id` (or `ticket_id`) on every organization-scoped MCP
    write. Organization context does not persist between tool calls.
@@ -18,11 +18,13 @@ Solutions).
 
 ## Current state
 
-- Work ticket: **#340** — *Overview summary widgets fail schema/read*
-  (post-#338 LIVE). Do **not** bundle with **#330** (factory) or **#331**
-  (audit; PR #6 stays draft). Soft **#318** parked.
-- Shipped: **#338** public pack scrub; **#322** generic public asset;
-  **#323** org-pin + FastMCP unwrap; **#320** v1 read-only console.
+- Work ticket: **#331** — *Ops Console: audit surface (who/what + deep links)*.
+  Fixtures-only preview; live SoR audit and production deep links held until
+  Challenger **#332** / **#336**. PR #6 stays draft.
+- Shipped: **#342** public README scrub; **#340** Overview FastMCP unwrap;
+  **#338** public pack vs dogfood scrub; **#325** mobile list overflow;
+  **#322** generic public asset; **#323** org-pin + FastMCP unwrap; **#320**
+  v1 read-only console.
 - Public pack contract: [`docs/public-pack.md`](../public-pack.md).
 - Portable deploy skill: [`docs/DEPLOY_OPS_CONSOLE.md`](../DEPLOY_OPS_CONSOLE.md)
   — **not WSL2**. (A) Docker Desktop + localhost; (B) optional `ops.local`;
