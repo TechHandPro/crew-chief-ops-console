@@ -80,6 +80,14 @@ describe("loadConfig", () => {
     expect(() => loadConfig(env)).toThrowError(/TNT_MCP_API_KEY/);
   });
 
+  it("requires explicit TNT URLs when the provider is tnt-mcp (no private hostname default)", () => {
+    const { TNT_MCP_URL: _mcp, ...withoutMcp } = liveEnv;
+    expect(() => loadConfig(withoutMcp)).toThrowError(/TNT_MCP_URL/);
+
+    const { TNT_WEB_BASE_URL: _web, ...withoutWeb } = liveEnv;
+    expect(() => loadConfig(withoutWeb)).toThrowError(/TNT_WEB_BASE_URL/);
+  });
+
   it("refuses a non-https MCP URL unless it is loopback", () => {
     expect(() => loadConfig({ ...liveEnv, TNT_MCP_URL: "http://tnt.example.test/mcp" })).toThrowError(
       /https/,
