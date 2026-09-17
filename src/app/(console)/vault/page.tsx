@@ -41,7 +41,7 @@ export default async function VaultPage({ searchParams }: PageProps<"/vault">) {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         eyebrow="Vault"
         title="Vault entries"

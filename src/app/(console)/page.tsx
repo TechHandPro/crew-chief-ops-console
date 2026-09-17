@@ -29,7 +29,7 @@ export default async function OverviewPage() {
     : [];
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <PageHeader
         eyebrow="Overview"
         title="What the crew has been writing"

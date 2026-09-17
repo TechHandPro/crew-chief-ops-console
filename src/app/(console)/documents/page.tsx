@@ -35,7 +35,7 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/docume
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         eyebrow="Documents"
         title="Notes & documents"

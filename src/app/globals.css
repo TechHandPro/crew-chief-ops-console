@@ -83,6 +83,7 @@
 @layer base {
   html {
     color-scheme: light dark;
+    overflow-x: clip;
   }
 
   body {
@@ -91,6 +92,8 @@
     font-family: var(--font-sans);
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   ::selection {
@@ -109,6 +112,8 @@
     color: var(--fg);
     line-height: 1.65;
     font-size: 0.9375rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
   .prose-doc > * + * {
     margin-top: 0.85em;
@@ -182,7 +187,10 @@
     color: var(--fg-muted);
   }
   .prose-doc table {
+    display: block;
     width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
     border-collapse: collapse;
     font-size: 0.875rem;
   }

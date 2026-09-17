@@ -21,7 +21,7 @@ export default async function TicketsPage({ searchParams }: PageProps<"/tickets"
   const tickets = await load(sor.listTickets({ search: query || undefined, openOnly: !showAll, limit: 100 }));
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         eyebrow="Tickets"
         title="Tickets"
@@ -29,8 +29,8 @@ export default async function TicketsPage({ searchParams }: PageProps<"/tickets"
         actions={<DeepLink href={sor.links.home()} label="Open system of record" />}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 w-full flex-1 sm:w-auto">
           <FilterBar
             action="/tickets"
             query={query}
