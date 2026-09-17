@@ -18,12 +18,16 @@ Solutions).
 
 ## Current state
 
-- Work ticket: **#320** — *CREW CHIEF Ops Console v1 (Fable 5.1) — read-only
-  tickets/docs/vault + deep links*.
-- Repository link: **pending**. As of 2026-09-16 `tnt_resolve_repo` returns
-  `action_required: link_repo` for this slug. Link it in TNT (Organization →
+- Work ticket: **#322** — *Ops Console: generic CREW CHIEF public asset
+  (pluggable SoR, no TNT branding)*.
+- Related incident: **#323** — *Ops Console LIVE: MCP list reads fail after
+  sign-in* (child of #320; fixed by pinning `organization_id` on list calls).
+- Shipped: **#320** — v1 read-only console (Resolved).
+- Repository link: **pending**. As of 2026-09-17 `tnt_resolve_repo` returns
+  `action_required: link_repo` for this slug. Reads do not depend on it: pass
+  `organization_id=1` on list tools. Link it in TNT (Organization →
   Repositories) and then update the `git_repository_id` in the pin file. Until
-  then, comment on #320 directly with `ticket_id=320`.
+  then, comment with `ticket_id=322` (or `323`).
 
 ## Related repositories
 

@@ -1,9 +1,9 @@
 /**
  * Domain model for the Ops Console.
  *
- * These types are the console's own vocabulary. Providers (TNT MCP today,
- * other systems of record later) translate their wire formats into these
- * shapes, so the UI never depends on a vendor payload.
+ * These types are the console's own vocabulary. Adapters (the fixture
+ * dataset, the TNT MCP adapter, or one you write) translate their wire
+ * formats into these shapes, so the UI never depends on a vendor payload.
  *
  * Everything here is read-only by design: there are no mutation types.
  */

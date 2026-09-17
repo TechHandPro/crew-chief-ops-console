@@ -4,8 +4,8 @@ import type { DocumentDetail, DocumentSummary, TicketComment, TicketDetail, Vaul
  * Demo dataset for running the console without a system of record.
  *
  * Every record is fictional. Hostnames, people, and keys do not exist. The
- * shapes mirror what the TNT MCP tools return so the UI exercises the same
- * code paths as production.
+ * shapes mirror what a system-of-record adapter returns so the UI exercises
+ * the same code paths as a live connection.
  */
 
 export const FIXTURE_ORGANIZATION = { id: 1, name: "Northwind Field Services (demo)" };
@@ -14,7 +14,7 @@ const CREW = {
   chief: "crew-chief@ops.example",
   product: "product-bot@ops.example",
   feature: "feature-bot@ops.example",
-  manager: "tnt-manager@ops.example",
+  manager: "crew-manager@ops.example",
   human: "jordan@northwind.example",
 };
 
@@ -40,7 +40,7 @@ export const FIXTURE_TICKETS: TicketDetail[] = [
       "## Goal\nA human window to audit what the ops crew creates: tickets, notes and documents, vault metadata.\n\n## Scope\n- Read-only lists and detail views\n- Deep links into the system of record\n- No secret reveal from the console\n\n## Out of scope\n- Create or edit from the console\n- Browser automation as the data path",
     comments: [
       comment(1795, CREW.product, "2026-09-16T23:28:23Z", "PRODUCT: repo confirmed. FEATURE launching the build agent."),
-      comment(1796, CREW.chief, "2026-09-16T23:30:41Z", "Tip PRODUCT + TNT MANAGER + CREW CHIEF when the PR is ready."),
+      comment(1796, CREW.chief, "2026-09-16T23:30:41Z", "Tip PRODUCT + CREW MANAGER + CREW CHIEF when the PR is ready."),
     ],
   },
   {
@@ -170,7 +170,7 @@ export const FIXTURE_DOCUMENTS: DocumentDetail[] = [
     organizationId: 1,
     readFull: true,
     content:
-      "# MCP Tool Catalog\n\nAuthenticate with an organization API key. One platform key serves every linked client project.\n\n## Session workflow\n\n1. `tnt_resolve_repo` to confirm routing.\n2. Post dev progress comments on the work ticket.\n3. Sync documentation to the domain ticket.\n\n## Vault\n\n| Tool | Scope | Purpose |\n|------|-------|---------|\n| `tnt_list_vault_entries` | `mcp:vault:read` | Metadata only |\n| `tnt_get_vault_secret` | `mcp:vault:write` | Reveal one secret; never echo |\n",
+      "# MCP Tool Catalog\n\nAuthenticate with an organization API key. One platform key serves every linked client project.\n\n## Session workflow\n\n1. `sor_resolve_repo` to confirm routing.\n2. Post dev progress comments on the work ticket.\n3. Sync documentation to the domain ticket.\n\n## Vault\n\n| Tool | Scope | Purpose |\n|------|-------|---------|\n| `sor_list_vault_entries` | `mcp:vault:read` | Metadata only |\n| `sor_get_vault_secret` | `mcp:vault:write` | Reveal one secret; never echo |\n",
   },
   {
     id: 691,
@@ -368,7 +368,7 @@ export const FIXTURE_VAULT: VaultEntrySummary[] = [
     name: "Platform API — Crew Chief",
     username: "crew-chief@ops.example",
     category: "API",
-    url: "https://tnt.example/mcp",
+    url: "https://sor.example/mcp",
     notes: "Organization API key used by the ops crew's MCP client. Internal only.",
     visibility: "internal",
     organizationId: 1,

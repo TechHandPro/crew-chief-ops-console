@@ -1,13 +1,19 @@
 # CREW CHIEF Ops Console
 
-A human, read-only window over what the ops crew writes: **tickets**,
-**notes/documents**, and **vault metadata**, with deep links into the system of
-record. Companion to [`crew-chief-middleware`](https://github.com/TechHandPro/crew-chief-middleware),
-which stays CLI/MCP-only.
+The human, read-only window for a **CREW CHIEF** crew: the tickets it works,
+the notes and documents it writes, and the credential metadata it files, with
+deep links into whatever system of record the crew uses.
+
+This repository is the **public template** for that console. It ships with a
+fictional demo dataset, no credentials, and no company branding. A system of
+record plugs in behind a small adapter interface; TNT (TechHand Network
+Toolkit) is the reference adapter, and the built-in fixtures are the second.
+It is the UI companion to [`crew-chief-middleware`](https://github.com/TechHandPro/crew-chief-middleware),
+which turns an OpenAPI spec into an MCP server and stays CLI/MCP-only.
 
 The console never creates, edits, or reveals anything. It reads through the
-same MCP endpoint the crew's agents use, authenticated with an organization API
-key, and hands you off to the real system (TNT today) when you need to act.
+same MCP endpoint the crew's agents use and hands you off to the real system
+when you need to act.
 
 <p>
   <img alt="Overview page" src="docs/screenshots/overview.webp" width="800" />
@@ -17,15 +23,16 @@ key, and hands you off to the real system (TNT today) when you need to act.
 
 | Area | List | Detail | Deep link |
 |------|------|--------|-----------|
-| Tickets | search, open/all toggle, status & priority badges | Markdown description, comment history, linked docs and vault entries | `/tickets/{id}` |
-| Documents | search, category chips, per-ticket filter | rendered Markdown (HTML skipped), front-matter panel | `/documents/{id}/edit` |
-| Vault | search, category chips, has-secret / OTP indicators | metadata, notes, linked tickets/contact/asset/domain/network | `/vault` |
+| Tickets | search, open/all toggle, status & priority badges | Markdown description, comment history, linked docs and vault entries | `SOR_TICKET_URL_TEMPLATE` |
+| Documents | search, category chips, per-ticket filter | rendered Markdown (HTML skipped), front-matter panel | `SOR_DOCUMENT_URL_TEMPLATE` |
+| Vault | search, category chips, has-secret / OTP indicators | metadata, notes, linked tickets/contact/asset/domain/network | `SOR_VAULT_URL_TEMPLATE` |
 
-Vault views are **metadata only** by construction: the console calls the
-metadata-only list tool, has no code path to the reveal tool, and refuses to
-render a vault payload that unexpectedly contains a `password`/`secret` field.
+Vault views are **metadata only** by construction: the interface has no
+method that returns a secret, the reference adapter has no code path to the
+reveal tool, and it refuses to render a vault payload that unexpectedly
+contains a `password`/`secret` field.
 
-## Run it
+## Try it in two minutes (no credentials)
 
 Requires Node 22+.
 
@@ -34,57 +41,115 @@ npm install
 npm run dev              # http://localhost:3000, demo dataset, no sign-in
 ```
 
-Without any environment the console runs against a built-in fictional dataset
-so you can evaluate the UI without credentials. To read from TNT:
+Without any environment the console runs against a fictional dataset
+(`src/lib/sor/fixtures/`) so anyone can evaluate the UI. The connection badge
+says so, and every deep link points at `https://sor.example`. To ship the demo
+as a production build (for a contest entry or a hosted preview) set
+`SOR_PROVIDER=fixtures` explicitly plus the access variables below.
+
+## Connect a system of record
+
+The console talks to one adapter, chosen by `SOR_PROVIDER`:
+
+| `SOR_PROVIDER` | Reads from | Credentials | Where |
+|----------------|------------|-------------|-------|
+| `fixtures` (default) | built-in demo dataset | none | `src/lib/sor/fixtures/` |
+| `tnt-mcp` | a TNT instance over MCP | organization API key | `src/lib/sor/tnt-mcp/` |
+| *yours* | any MCP server or read API | whatever it needs | `src/lib/sor/<name>/` |
+
+### Plug in your own MCP server
+
+`src/lib/sor/provider.ts` defines the read-only `SystemOfRecord` interface
+(`listTickets`, `getTicket`, `listDocuments`, `getDocument`,
+`listVaultEntries`, `getVaultEntry`, `getConnection`, plus a `links` object
+for deep links). Adding an adapter is five contained steps:
+
+1. **Implement the interface** in `src/lib/sor/<name>/provider.ts`, mapping
+   your wire format into the types in `src/lib/sor/types.ts`. The UI only
+   ever sees those types. Build `links` with `createDeepLinks` so records can
+   hand off to your web UI.
+2. **Parse configuration** in `src/lib/config.ts`: add `"<name>"` to
+   `ProviderKind`, read the environment your adapter needs, and fail closed
+   when a secret is missing.
+3. **Register it** in `createSystemOfRecord` (`src/lib/sor/index.ts`). The
+   `switch` is exhaustive, so `npm run typecheck` lists every place that
+   needs the new case.
+4. **Keep the guarantees.** Allow-list the tools your adapter may call, reject
+   payloads carrying secret material, and throw `SystemOfRecordError` with
+   one of its kinds (`unreachable`, `unauthorized`, `forbidden`,
+   `bad_response`, `upstream`) so the shared error states can explain what
+   happened.
+5. **Test it like the reference adapter.** `tnt-mcp/provider.integration.test.ts`
+   spins up a fake server that speaks the target's shapes over Streamable
+   HTTP and drives the real MCP client through auth, routing, parsing,
+   session loss, and the never-call-reveal guarantee. Copy that pattern.
+
+If your server was generated by `crew-chief-middleware`, the MCP client in
+`src/lib/sor/tnt-mcp/client.ts` (Bearer auth, Streamable HTTP, single lazy
+session, reconnect-once) is reusable as-is; only the tool names and schemas
+change.
+
+### Reference adapter: TNT over MCP
 
 ```bash
 cp .env.example .env.local
-# set SOR_PROVIDER=tnt-mcp, TNT_MCP_API_KEY, TNT_ORGANIZATION_ID
-# optional: TNT_GIT_REPOSITORY_ID / TNT_REPO_SLUG for ticket+doc routing
+# SOR_PROVIDER=tnt-mcp, TNT_MCP_URL, TNT_WEB_BASE_URL, TNT_MCP_API_KEY, TNT_ORGANIZATION_ID
 npm run dev
 ```
 
-Scripts: `npm run build`, `npm start`, `npm test`, `npm run lint`, `npm run typecheck`.
+The adapter is an **MCP client**. It speaks Streamable HTTP to TNT's FastMCP
+endpoint and sends the organization API key as `Authorization: Bearer <key>`,
+the same shape Cursor Desktop and Cursor Automations use. Keys are created in
+TNT → Organization → **API Keys**.
 
-## How it authenticates to TNT
-
-The console is an **MCP client**. It speaks Streamable HTTP to TNT's FastMCP
-endpoint (`https://ai.techhand.pro/mcp`) and sends the organization API key as
-`Authorization: Bearer <key>` — the same shape Cursor Desktop and Cursor
-Automations use. Keys are created in TNT → Organization → **API Keys**.
-
-Key model:
-
-- **Scopes.** The key needs read scopes only: `mcp:tickets:read`,
-  `mcp:docs:read`, `mcp:vault:read`, `mcp:repo:resolve`. A platform key that
-  serves several client organizations also needs `mcp:platform:cross_org`.
-  Grant scopes on an existing key without rotating it.
+- **Scopes.** Read scopes only: `mcp:tickets:read`, `mcp:docs:read`,
+  `mcp:vault:read`; add `mcp:repo:resolve` if you set a repository pin, and
+  `mcp:platform:cross_org` for a platform key that serves several client
+  organizations. Grant scopes on an existing key without rotating it.
 - **Actor permission.** Vault metadata additionally requires the MCP actor
-  user behind the key to hold `page:vault`. If listings fail with a `page:vault`
-  error, the fix is on the TNT host (service-user role), not in this app.
-- **Organization pin.** `TNT_ORGANIZATION_ID` is sent as `organization_id` on
-  every vault call. On a cross-org key TNT refuses an unpinned vault listing,
-  and pinning guarantees the console never lists another tenant by accident.
-- **Repository routing.** When `TNT_GIT_REPOSITORY_ID` / `TNT_REPO_SLUG` are
-  set, the console calls `tnt_resolve_repo` when it opens an MCP session so
-  ticket and document reads route to the linked organization. If TNT later
-  answers `action_required: resolve_repo` (its session expired), the client
-  reconnects, re-resolves, and retries once.
-- **Allow-list.** The client can only call these tools:
-  `tnt_resolve_repo`, `tnt_list_tickets`, `tnt_get_ticket`,
-  `tnt_list_documents`, `tnt_get_document`, `tnt_list_vault_entries`.
-  Adding a name to that list is a code change reviewers will see.
+  user behind the key to hold `page:vault`. If vault listings fail with a
+  `page:vault` error, the fix is on the TNT host, not in this app.
+- **Organization pin (required).** `TNT_ORGANIZATION_ID` is sent as
+  `organization_id` on **every** ticket, document, and vault list. Lists
+  therefore work without a linked GitHub repository and without a prior
+  `tnt_resolve_repo`, and the console can never list another tenant by
+  accident.
+- **Repository pin (optional, informational).** When `TNT_GIT_REPOSITORY_ID`
+  / `TNT_REPO_SLUG` are set, the adapter calls `tnt_resolve_repo` once per
+  session and shows the linked repository in the connection badge. If TNT
+  reports the repository as not linked (`action_required: link_repo`), the
+  console keeps reading through the organization pin and displays a routing
+  note; only a 401 or an unreachable endpoint blocks the connection.
+- **Session loss.** If TNT forgets the session (restart, expiry) the client
+  reconnects and retries the read once.
+- **Allow-list.** The client can only call `tnt_resolve_repo`,
+  `tnt_list_tickets`, `tnt_get_ticket`, `tnt_list_documents`,
+  `tnt_get_document`, `tnt_list_vault_entries`. Adding a name to that list
+  is a code change reviewers will see.
+- **Failure envelopes.** TNT reports tool failures either as
+  `{ success: false, error }` or as `{ error, action_required }` with no
+  `success` key. Both surface as "the system of record reported an error"
+  with TNT's own message; a payload that matches neither shape is rejected
+  as `bad_response` rather than rendered partially.
 
 The key lives only in the server process environment. It is never sent to the
 browser, never logged, and never part of an error message.
 
-### Adapting to another system of record
+## Branding
 
-`src/lib/sor/provider.ts` defines the read-only `SystemOfRecord` interface.
-`tnt-mcp/` implements it for TNT; `fixtures/` implements it with demo data.
-A different MCP server (for example one generated by crew-chief-middleware)
-gets a third adapter and a new `SOR_PROVIDER` value. Deep-link templates are
-already configurable through `SOR_*_URL_TEMPLATE`.
+Defaults are the generic template: **CREW CHIEF Ops Console** / *Audit what
+the crew writes*. A deployment re-labels itself through environment only:
+
+| Variable | Default | Shown |
+|----------|---------|-------|
+| `OPS_CONSOLE_BRAND_NAME` | `CREW CHIEF Ops Console` | shell, sign-in, document titles |
+| `OPS_CONSOLE_BRAND_TAGLINE` | `Audit what the crew writes` | shell, sign-in |
+| `SOR_SYSTEM_NAME` | adapter name (`TNT`) | connection badge |
+
+There are no company names in the UI code or the demo dataset. TechHand's own
+instance at `ops.techhand.pro` is a **dogfood deployment** of this template
+configured entirely through those variables plus the TNT adapter; nothing in
+this repository is specific to it.
 
 ## Console access
 
@@ -110,7 +175,7 @@ Every response carries a nonce-based CSP with `frame-ancestors 'none'`,
 
 ## Deploy
 
-This is a standalone public web app; it does not deploy with the TNT platform.
+This is a standalone web app; it does not deploy with any system of record.
 
 **Container**
 
@@ -118,15 +183,17 @@ This is a standalone public web app; it does not deploy with the TNT platform.
 docker build -t crew-chief-ops-console .
 docker run --rm -p 3000:3000 \
   -e SOR_PROVIDER=tnt-mcp \
+  -e TNT_MCP_URL=https://tnt.example/mcp -e TNT_WEB_BASE_URL=https://tnt.example \
   -e TNT_MCP_API_KEY=… -e TNT_ORGANIZATION_ID=1 \
-  -e TNT_GIT_REPOSITORY_ID=… -e TNT_REPO_SLUG=TechHandPro/… \
   -e OPS_CONSOLE_ACCESS_TOKEN=… -e OPS_CONSOLE_SESSION_SECRET=… \
   crew-chief-ops-console
 ```
 
+Swap `SOR_PROVIDER=fixtures` (and drop the `TNT_*` lines) for a hosted demo.
 The image is `output: "standalone"`, runs as a non-root user, and exposes
 `GET /api/health` (reports config validity and active provider; it does not
-call TNT, so a TNT outage does not flap the console's own health).
+call the system of record, so an upstream outage does not flap the console's
+own health).
 
 **Node host / systemd**
 
@@ -136,7 +203,7 @@ PORT=3000 node .next/standalone/server.js     # with the env above exported
 ```
 
 Put it behind TLS (Caddy/nginx). The MCP endpoint must be reachable from the
-host running the console; the browser never talks to TNT directly.
+host running the console; the browser never talks to the system of record.
 
 **Vercel / similar**: works as-is; set the same environment variables as
 server-side secrets. Note the in-process read cache and sign-in limiter are
@@ -148,23 +215,25 @@ per instance.
 src/
   app/                   routes (App Router). (console)/ is gated; sign-in is public
   components/            UI primitives, record rows, shell, markdown renderer
-  lib/config.ts          zod-validated environment, fail-closed rules
+  lib/config.ts          zod-validated environment, fail-closed rules, branding
   lib/auth/              session tokens, access helpers, failure limiter
   lib/sor/               SystemOfRecord contract, deep links, memo cache
-  lib/sor/tnt-mcp/       MCP client, wire schemas, TNT adapter (+ tests)
-  lib/sor/fixtures/      demo dataset adapter
+  lib/sor/fixtures/      demo dataset adapter (default)
+  lib/sor/tnt-mcp/       reference adapter: MCP client, wire schemas, tests
   proxy.ts               auth redirect + security headers
 ```
 
+Scripts: `npm run dev`, `npm run build`, `npm start`, `npm test`,
+`npm run lint`, `npm run typecheck`.
+
 `npm test` runs unit tests for config, schemas, sessions, and formatting, plus
-an integration test that spins up a fake TNT-shaped MCP server over HTTP and
-drives the real client through auth, routing, parsing, session loss, and the
-never-call-reveal guarantee.
+the adapter integration test described above.
 
-Issue tracking is TNT: see [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md)
-and the pin in [`docs/TNT_TICKET.md`](docs/TNT_TICKET.md) (ticket #320).
+Issue tracking for this repository is TNT: see
+[`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) and the pin in
+[`docs/TNT_TICKET.md`](docs/TNT_TICKET.md).
 
-## Not in v1
+## Not in scope
 
 - Creating or editing tickets, documents, or vault entries
 - Revealing secrets
