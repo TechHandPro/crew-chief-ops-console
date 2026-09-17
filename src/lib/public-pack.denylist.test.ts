@@ -14,12 +14,13 @@ import {
 } from "./sor/fixtures/data";
 
 /**
- * TNT #338 public-pack deny-list (dry-run proof).
+ * Public-pack deny-list (dry-run proof).
  *
  * Canonical written list: docs/public-pack.md
  *
  * This file is the automated check. It is not itself a public-pack surface,
- * so deny-list literals may appear here.
+ * so deny-list literals may appear here. README prose rules (vendor SoR
+ * must not read as required) extend the original hostname/secret scan.
  */
 
 const REPO_ROOT = join(import.meta.dirname, "../..");
@@ -137,6 +138,63 @@ describe("public pack deny-list (TNT #338)", () => {
     );
     expect(PUBLIC_PACK_FILES.map(repoPath)).not.toContain("docs/DEPLOY_OPS_CONSOLE.md");
     expect(PUBLIC_PACK_FILES.map(repoPath)).not.toContain("docs/public-pack.md");
+    expect(PUBLIC_PACK_FILES.map(repoPath)).not.toContain("docs/private/tnt-mcp-adapter.md");
+    expect(PUBLIC_PACK_FILES.map(repoPath)).not.toContain("docs/private/README.md");
+  });
+
+  it("README leads with fixtures + SystemOfRecord and never treats a vendor SoR as required", () => {
+    const readme = readFileSync(join(REPO_ROOT, "README.md"), "utf8");
+    const fixturesAt = readme.search(/src\/lib\/sor\/fixtures/);
+    const interfaceAt = readme.search(/SystemOfRecord/);
+    const optionalLiveAt = readme.search(/Optional: connect a live MCP server/);
+
+    expect(fixturesAt, "fixtures path").toBeGreaterThan(-1);
+    expect(interfaceAt, "SystemOfRecord").toBeGreaterThan(-1);
+    expect(optionalLiveAt, "optional live MCP example").toBeGreaterThan(-1);
+    expect(fixturesAt).toBeLessThan(optionalLiveAt);
+    expect(interfaceAt).toBeLessThan(optionalLiveAt);
+    expect(readme).toMatch(/SOR_PROVIDER=fixtures/);
+    expect(readme).toMatch(/SOR_PROVIDER=<your-adapter>/);
+    expect(readme).toMatch(/SOR_SYSTEM_NAME=Your system of record/);
+
+    const vendorName = ["T", "N", "T"].join("");
+    const vendorToolkit = ["TechHand", "Network", "Toolkit"].join(" ");
+    const vendorProvider = `${vendorName.toLowerCase()}-mcp`;
+    const vendorEnvPrefix = `${vendorName}_`;
+    const trackerPin = `${vendorName}_TICKET.md`;
+
+    expect(readme).not.toMatch(new RegExp(`\\b${vendorName}\\b`));
+    expect(readme).not.toContain(vendorToolkit);
+    expect(readme).not.toContain(vendorProvider);
+    expect(readme).not.toContain(vendorEnvPrefix);
+    expect(readme).not.toContain("issue-tracker.md");
+    expect(readme).not.toContain(trackerPin);
+    expect(readme).not.toMatch(/TNT\s*#\d+/);
+    expect(readme).not.toMatch(/\b#338\b/);
+    expect(readme).not.toMatch(/\b#331\b/);
+    expect(readme).not.toMatch(/Reference adapter:/i);
+    expect(readme).not.toMatch(/SOR_SYSTEM_NAME[\s\S]{0,80}\bTNT\b/);
+  });
+
+  it("keeps vendor SoR dogfood notes off the public README (optional private reference)", () => {
+    const privateNotes = join(REPO_ROOT, "docs/private/tnt-mcp-adapter.md");
+    expect(existsSync(privateNotes)).toBe(true);
+    const text = readFileSync(privateNotes, "utf8");
+    expect(text).toMatch(/optional/i);
+    expect(text).toMatch(/SystemOfRecord/);
+    expect(text).toMatch(/SOR_PROVIDER=tnt-mcp/);
+    expect(text).toMatch(/ops\.techhand\.pro/);
+  });
+
+  it("strips tracker ticket ids from README-facing env docs", () => {
+    const envExample = readFileSync(join(REPO_ROOT, ".env.example"), "utf8");
+    expect(envExample).toMatch(/Optional example adapter/);
+    expect(envExample).toMatch(/SOR_PROVIDER=fixtures/);
+    expect(envExample).not.toMatch(/TNT\s*#\d+/);
+    expect(envExample).not.toMatch(/\b#338\b/);
+    expect(envExample).not.toMatch(/\b#331\b/);
+    expect(envExample).not.toMatch(/Defaults to the adapter's own name \("TNT"/);
+    expect(envExample).toMatch(/SOR_SYSTEM_NAME=Acme SoR/);
   });
 
   it("ships the portable Deploy Ops Console skill under docs (TNT #338, cross #331)", () => {
