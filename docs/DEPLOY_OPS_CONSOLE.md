@@ -20,22 +20,21 @@ TechHand-only runbook.
 | **Parked** | Soft **#318**. Contest/template publish stays Jeremiah. |
 | **Scrub** | Public defaults stay generic. See [`public-pack.md`](public-pack.md). |
 
-## Tracks (do not default to WSL2)
+## Jeremiah tracks — avoid WSL2 as default
 
-Start at **A**. Do **not** open an Ubuntu WSL2 shell, a Linux VM, or
-“install Docker inside WSL” as the documented first path. Docker Desktop for
-Windows is the operator workflow. If Desktop happens to use a WSL2 backend,
-that is an implementation detail — operators still build and publish from
-Windows (PowerShell or Docker Desktop).
+Do **not** start from an Ubuntu WSL2 shell, “install Docker inside WSL,” or
+a Linux VM. That is not the default local path. Docker Desktop on Windows
+is. (If Desktop uses a WSL2 *backend*, ignore it — operators stay in
+PowerShell / Docker Desktop.)
 
-| Track | When | How you reach the UI |
-|-------|------|----------------------|
-| **A — default** | First seat, laptop, contest preview, most operators | Docker Desktop (Windows) + **localhost port** → `http://127.0.0.1:3000` |
-| **B — optional** | Same machine or LAN, nicer hostname | Per-machine `hosts` → `ops.local` (127.0.0.1 or a LAN IP) |
-| **C — later** | Shared / public hostname | VPS + Caddy + public DNS. TechHand TPS + `ops.techhand.pro` is **one example**, not the skill. |
+| | Track | Default? | How you open the UI |
+|---|--------|----------|---------------------|
+| **A** | Docker Desktop on Windows + localhost port | **Yes — default local** | `http://127.0.0.1:3000` |
+| **B** | Optional per-machine **Windows hosts** → `ops.local` | No | `http://ops.local:3000` (`127.0.0.1` or a LAN IP) |
+| **C** | VPS + Caddy + public DNS | No — later | `https://<your-host>` (TechHand TPS / `ops.techhand.pro` = **example only**) |
 
-macOS/Linux Docker Engine operators follow the same Compose as A (localhost
-port). Still skip WSL2-as-workflow.
+macOS/Linux Docker Engine can follow **A** (localhost port). Still do not
+default to WSL2.
 
 ## Deny-list (still required)
 
@@ -99,7 +98,7 @@ openssl rand -base64 24    # OPS_CONSOLE_ACCESS_TOKEN
 openssl rand -hex 32       # OPS_CONSOLE_SESSION_SECRET
 ```
 
-## Track A — Docker Desktop Windows + localhost port (default)
+## A) Docker Desktop on Windows + localhost port (default local)
 
 Install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/).
 Use the Desktop app (and PowerShell). Do not switch the skill to “open WSL2
@@ -178,34 +177,34 @@ docker build -t crew-chief-ops-console .
 docker run --rm -p 127.0.0.1:3000:3000 --env-file compose.env crew-chief-ops-console
 ```
 
-## Track B — optional per-machine hosts → ops.local
+## B) Optional per-machine Windows hosts → ops.local
 
-Same container as A. Add a **hosts** line on each machine that should type
-`http://ops.local:3000` instead of `http://127.0.0.1:3000`. This is not
-public DNS and not a required default.
+Same container as A. This is **not** public DNS and not a required default.
+Edit the **Windows** hosts file on each machine that should type
+`http://ops.local:3000` instead of `http://127.0.0.1:3000`:
 
-On the **console machine** (Docker Desktop host):
+`C:\Windows\System32\drivers\etc\hosts` (Notepad **as Administrator**).
+
+On the Docker Desktop host (this PC):
 
 ```
-127.0.0.1  ops.local
+127.0.0.1    ops.local
 ```
 
-On **another LAN machine**, use the console host’s LAN IP (not a public
-dogfood hostname):
+On another LAN PC that should reach this console, use this PC’s LAN IP
+(not a public dogfood hostname):
 
 ```
 192.168.x.x  ops.local
 ```
 
-Windows hosts file: `C:\Windows\System32\drivers\etc\hosts` (edit as
-Administrator). macOS/Linux: `/etc/hosts`. Flush the DNS cache after
-editing. Publish `3000:3000` (not loopback-only) if LAN clients must
-connect.
+Then from an elevated PowerShell: `ipconfig /flushdns`. If LAN PCs must
+connect, publish `3000:3000` in Compose (not `127.0.0.1:3000` only).
 
-`ops.local` is a per-machine alias. Do not put it in the public pack as a
-required hostname, and do not treat it as TechHand dogfood.
+`ops.local` is a per-machine Windows alias. Do not put it in the public pack
+as a required hostname, and do not treat it as TechHand dogfood.
 
-## Track C — VPS + Caddy + public DNS (example path only)
+## C) VPS + Caddy + public DNS (TechHand TPS example only)
 
 Use this when you want a shared https hostname. TechHand’s TPS host + Caddy
 + MANAGER merge at `ops.techhand.pro` is **one** operator’s env-only seating.
