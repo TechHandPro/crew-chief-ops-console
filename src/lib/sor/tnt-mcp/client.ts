@@ -277,12 +277,50 @@ function describeError(error: unknown): string {
 }
 
 /**
+ * Fields the console Zod envelopes (and `tnt_resolve_repo`) put at the top
+ * level. FastMCP's `structuredContent` often wraps that object as `{ result: T }`.
+ */
+const TOOL_PAYLOAD_KEYS = ["success", "tickets", "documents", "entries", "ticket", "document", "linked"] as const;
+
+function hasToolPayloadFields(value: Record<string, unknown>): boolean {
+  return TOOL_PAYLOAD_KEYS.some((key) => Object.hasOwn(value, key));
+}
+
+/**
+ * FastMCP (and some MCP SDK servers) put the tool return value under a
+ * single `result` key. The console schemas expect the inner object
+ * (`success` + `tickets` / `documents` / `entries`, or `linked` for
+ * `tnt_resolve_repo`). Prefer that unwrapped object when:
+ * - `structuredContent` is exactly `{ result: T }`, or
+ * - the top level has no expected fields but `.result` does.
+ */
+function unwrapFastMcpStructuredContent(structured: Record<string, unknown>): unknown {
+  if (!Object.hasOwn(structured, "result")) {
+    return structured;
+  }
+
+  const keys = Object.keys(structured);
+  if (keys.length === 1) {
+    return structured.result;
+  }
+
+  const nested = structured.result;
+  if (isRecord(nested) && !hasToolPayloadFields(structured) && hasToolPayloadFields(nested)) {
+    return nested;
+  }
+
+  return structured;
+}
+
+/**
  * FastMCP returns tool output as a JSON string inside a text content block,
- * and newer servers may add `structuredContent`. Accept both.
+ * and newer servers add `structuredContent` — often wrapped as `{ result: T }`.
+ * Prefer the unwrapped structured object; empty structured content falls
+ * through to the text JSON payload.
  */
 export function decodeToolResult(result: CallToolResult): unknown {
   if (result.structuredContent && Object.keys(result.structuredContent).length > 0) {
-    return result.structuredContent;
+    return unwrapFastMcpStructuredContent(result.structuredContent);
   }
   const text = result.content
     .filter((block): block is Extract<CallToolResult["content"][number], { type: "text" }> => block.type === "text")
