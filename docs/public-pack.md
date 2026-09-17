@@ -91,9 +91,11 @@ runbook, not as the public template contract.
 
 ## Deploy skill
 
-Portable seating lives in [`DEPLOY_OPS_CONSOLE.md`](DEPLOY_OPS_CONSOLE.md)
-(Docker Compose, Caddy/TLS, DNS, vaulted MCP URL + token, smoke,
-fail-closed). Cross **#331**: that ticket is the later audit surface; this
+Portable seating lives in [`DEPLOY_OPS_CONSOLE.md`](DEPLOY_OPS_CONSOLE.md).
+**Do not default to WSL2.** Tracks: (A) Docker Desktop Windows + localhost
+port; (B) optional `hosts` → `ops.local`; (C) VPS+Caddy+public DNS (TechHand
+TPS / `ops.techhand.pro` = example only). Vaulted MCP URL + token, smoke,
+fail-closed. Cross **#331**: that ticket is the later audit surface; this
 skill only seats the console.
 
 ## Out of scope here

@@ -33,5 +33,6 @@ on org **TechHand Pro Solutions** (org 1).
 4. Do not resolve long-lived platform pin tickets (#35) when a slice ships here.
 
 Public pack contract: [`docs/public-pack.md`](public-pack.md). Portable deploy
-skill: [`docs/DEPLOY_OPS_CONSOLE.md`](DEPLOY_OPS_CONSOLE.md) (cross #331).
+skill: [`docs/DEPLOY_OPS_CONSOLE.md`](DEPLOY_OPS_CONSOLE.md) — not WSL2;
+tracks A localhost / B ops.local / C VPS (TPS example only). Cross #331.
 Soft #318 parked. Publish stays Jeremiah.

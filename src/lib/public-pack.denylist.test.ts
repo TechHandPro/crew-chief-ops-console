@@ -142,7 +142,10 @@ describe("public pack deny-list (TNT #338)", () => {
   it("ships the portable Deploy Ops Console skill under docs (TNT #338, cross #331)", () => {
     const skill = readFileSync(join(REPO_ROOT, "docs/DEPLOY_OPS_CONSOLE.md"), "utf8");
     for (const needle of [
-      "Docker Compose",
+      "Do not default to WSL2",
+      "Docker Desktop",
+      "localhost port",
+      "ops.local",
       "Caddy",
       "DNS checklist",
       "orange",

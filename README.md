@@ -182,11 +182,12 @@ Every response carries a nonce-based CSP with `frame-ancestors 'none'`,
 
 ## Deploy
 
-Portable seating (Docker Compose, Caddy/TLS or nginx, DNS, vaulted MCP
-URL + token, tickets/docs/vault smoke, fail-closed if MCP is missing) is the
-**Deploy Ops Console** skill: [`docs/DEPLOY_OPS_CONSOLE.md`](docs/DEPLOY_OPS_CONSOLE.md)
-(TNT #338; cross #331). Secrets stay in the vault / orange-prompt — never
-chat. A private dogfood hostname is env-only and is not required here.
+Portable seating is the **Deploy Ops Console** skill:
+[`docs/DEPLOY_OPS_CONSOLE.md`](docs/DEPLOY_OPS_CONSOLE.md) (TNT #338; cross
+#331). **Do not default to WSL2.** Tracks: (A) Docker Desktop on Windows +
+localhost port; (B) optional per-machine hosts → `ops.local`; (C) later
+VPS+Caddy+public DNS (a private dogfood hostname is env-only and is not
+required here). Secrets stay in the vault / orange-prompt — never chat.
 
 This is a standalone web app; it does not deploy with any system of record.
 
@@ -235,7 +236,7 @@ src/
   lib/sor/tnt-mcp/       reference adapter: MCP client, wire schemas, tests
   proxy.ts               auth redirect + security headers
 docs/public-pack.md           public pack vs dogfood + deny-list (TNT #338)
-docs/DEPLOY_OPS_CONSOLE.md    portable deploy skill (Compose, Caddy, DNS, smoke)
+docs/DEPLOY_OPS_CONSOLE.md    deploy skill: Desktop+localhost, optional ops.local, later VPS (not WSL2)
 ```
 
 Scripts: `npm run dev`, `npm run build`, `npm start`, `npm test`,
