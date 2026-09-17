@@ -1,4 +1,4 @@
-import { ArrowRight, FileText, KeyRound, Ticket } from "lucide-react";
+import { ArrowRight, FileText, KeyRound, ScrollText, Ticket } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -32,6 +32,19 @@ export default async function OverviewPage() {
         description="Recent tickets, documents, and vault metadata from the connected system of record. Everything here is read-only; use the deep links to act."
         actions={<DeepLink href={sor.links.home()} label="Open system of record" />}
       />
+
+      <Link
+        href="/audit"
+        className="flex min-w-0 items-start gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card transition hover:border-border-strong"
+      >
+        <ScrollText className="mt-0.5 size-4 shrink-0 text-fg-muted" aria-hidden />
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-fg">Audit preview</span>
+          <span className="mt-0.5 block text-sm text-fg-muted">
+            Demo who/what rows. The audit page does not read the live system of record.
+          </span>
+        </span>
+      </Link>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard

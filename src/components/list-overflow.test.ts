@@ -53,7 +53,7 @@ describe("list views stay inside a 375px viewport", () => {
     expect(card).toMatch(/overflow-x-clip/);
   });
 
-  it.each(["records/ticket-row.tsx", "records/document-row.tsx", "records/vault-row.tsx"] as const)(
+  it.each(["records/ticket-row.tsx", "records/document-row.tsx", "records/vault-row.tsx", "records/audit-row.tsx"] as const)(
     "%s stacks on narrow widths and can shrink",
     (file) => {
       const src = read(file);

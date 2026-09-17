@@ -1,4 +1,4 @@
-import { FileText, HardHat, KeyRound, LayoutDashboard, LogOut, Ticket } from "lucide-react";
+import { FileText, HardHat, KeyRound, LayoutDashboard, LogOut, ScrollText, Ticket } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
@@ -14,6 +14,7 @@ const NAV: Array<{ href: Route; label: string; icon: ReactNode }> = [
   { href: "/tickets", label: "Tickets", icon: <Ticket className="size-4" aria-hidden /> },
   { href: "/documents", label: "Documents", icon: <FileText className="size-4" aria-hidden /> },
   { href: "/vault", label: "Vault", icon: <KeyRound className="size-4" aria-hidden /> },
+  { href: "/audit", label: "Audit", icon: <ScrollText className="size-4" aria-hidden /> },
 ];
 
 export function AppShell({ children, showSignOut }: { children: ReactNode; showSignOut: boolean }) {
