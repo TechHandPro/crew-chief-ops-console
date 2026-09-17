@@ -58,27 +58,26 @@ export interface AppConfig {
 
 /**
  * Generic defaults. The public template ships as "CREW CHIEF Ops Console";
- * a deployment (for example TechHand's dogfood instance) re-labels itself
- * through OPS_CONSOLE_BRAND_NAME / OPS_CONSOLE_BRAND_TAGLINE only.
+ * a deployment re-labels itself through OPS_CONSOLE_BRAND_NAME /
+ * OPS_CONSOLE_BRAND_TAGLINE only. Live adapter URLs have no default hostname
+ * (TNT #338 — public pack vs dogfood).
  */
 export const DEFAULT_BRAND_NAME = "CREW CHIEF Ops Console";
 export const DEFAULT_BRAND_TAGLINE = "Audit what the crew writes";
 
 const DEFAULT_TNT_SYSTEM_NAME = "TNT";
-const DEFAULT_TNT_MCP_URL = "https://ai.techhand.pro/mcp";
-const DEFAULT_TNT_WEB_BASE_URL = "https://ai.techhand.pro";
 const MIN_SECRET_LENGTH = 16;
 const MIN_SESSION_SECRET_LENGTH = 32;
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   SOR_PROVIDER: z.enum(["tnt-mcp", "fixtures"]).optional(),
-  TNT_MCP_URL: z.string().trim().min(1).default(DEFAULT_TNT_MCP_URL),
+  TNT_MCP_URL: z.string().trim().min(1).optional(),
   TNT_MCP_API_KEY: z.string().trim().min(1).optional(),
   TNT_ORGANIZATION_ID: z.coerce.number().int().positive().optional(),
   TNT_GIT_REPOSITORY_ID: z.coerce.number().int().positive().optional(),
   TNT_REPO_SLUG: z.string().trim().min(1).optional(),
-  TNT_WEB_BASE_URL: z.string().trim().min(1).default(DEFAULT_TNT_WEB_BASE_URL),
+  TNT_WEB_BASE_URL: z.string().trim().min(1).optional(),
   SOR_SYSTEM_NAME: z.string().trim().min(1).optional(),
   SOR_TICKET_URL_TEMPLATE: z.string().trim().min(1).default("/tickets/{id}"),
   SOR_DOCUMENT_URL_TEMPLATE: z.string().trim().min(1).default("/documents/{id}/edit"),
@@ -167,6 +166,16 @@ function resolveTnt(env: z.infer<typeof envSchema>): TntConfig {
   if (!env.TNT_ORGANIZATION_ID) {
     throw new ConfigError(
       "TNT_ORGANIZATION_ID is required when SOR_PROVIDER=tnt-mcp (the organization pin for vault and cross-org keys).",
+    );
+  }
+  if (!env.TNT_MCP_URL) {
+    throw new ConfigError(
+      "TNT_MCP_URL is required when SOR_PROVIDER=tnt-mcp. There is no default hostname; set the MCP endpoint for this deployment.",
+    );
+  }
+  if (!env.TNT_WEB_BASE_URL) {
+    throw new ConfigError(
+      "TNT_WEB_BASE_URL is required when SOR_PROVIDER=tnt-mcp. There is no default hostname; set the web UI base for deep links.",
     );
   }
   return {

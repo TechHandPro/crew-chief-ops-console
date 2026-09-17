@@ -18,11 +18,16 @@ Solutions).
 
 ## Current state
 
-- Work ticket: **#322** — *Ops Console: generic CREW CHIEF public asset
-  (pluggable SoR, no TNT branding)*.
-- Related incident: **#323** — *Ops Console LIVE: MCP list reads fail after
-  sign-in* (child of #320; fixed by pinning `organization_id` on list calls).
-- Shipped: **#320** — v1 read-only console (Resolved).
+- Work ticket: **#338** — *CREW CHIEF edge: public pack vs dogfood scrub*
+  (child of epic **#329**). Standalone dry-run + deny-list; do **not** bundle
+  with **#330** (factory) or **#331** (audit).
+- Shipped: **#322** generic public asset; **#323** org-pin list fix; **#320**
+  v1 read-only console.
+- Public pack contract: [`docs/public-pack.md`](../public-pack.md).
+- Portable deploy skill: [`docs/DEPLOY_OPS_CONSOLE.md`](../DEPLOY_OPS_CONSOLE.md)
+  — **not WSL2**. (A) Docker Desktop + localhost; (B) optional `ops.local`;
+  (C) VPS+Caddy (TPS example only). Cross **#331**. Soft **#318** parked.
+  Publish stays Jeremiah.
 - Repository link: **linked** on org 1 as of 2026-09-17,
   `git_repository_id=12`. Pass it on organization-scoped writes. Console reads
   still do not depend on it: the adapter pins `organization_id` on every list.

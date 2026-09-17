@@ -15,6 +15,10 @@ The console never creates, edits, or reveals anything. It reads through the
 same MCP endpoint the crew's agents use and hands you off to the real system
 when you need to act.
 
+Public pack (this repo, fixtures, generic defaults) versus a private dogfood
+deploy is documented in [docs/public-pack.md](docs/public-pack.md). Live
+hostnames and secrets are env-only; they are never required defaults.
+
 <p>
   <img alt="Overview page" src="docs/screenshots/overview.webp" width="800" />
 </p>
@@ -146,10 +150,13 @@ the crew writes*. A deployment re-labels itself through environment only:
 | `OPS_CONSOLE_BRAND_TAGLINE` | `Audit what the crew writes` | shell, sign-in |
 | `SOR_SYSTEM_NAME` | adapter name (`TNT`) | connection badge |
 
-There are no company names in the UI code or the demo dataset. TechHand's own
-instance at `ops.techhand.pro` is a **dogfood deployment** of this template
-configured entirely through those variables plus the TNT adapter; nothing in
-this repository is specific to it.
+There are no company names in the UI code or the demo dataset. A private
+dogfood deployment (hostname, branding, live adapter URL) is configured
+entirely through those variables plus the adapter env; this repository never
+requires a private hostname. See
+[Public pack vs dogfood](docs/public-pack.md) for the split and the #338
+deny-list (no vault secrets/paths, no client names, no private hostnames as
+required defaults).
 
 ## Console access
 
@@ -174,6 +181,13 @@ Every response carries a nonce-based CSP with `frame-ancestors 'none'`,
 `http(s)`/`mailto` links, and remote images replaced by their alt text.
 
 ## Deploy
+
+Portable seating is the **Deploy Ops Console** skill:
+[`docs/DEPLOY_OPS_CONSOLE.md`](docs/DEPLOY_OPS_CONSOLE.md) (TNT #338; cross
+#331). **Do not default to WSL2.** Tracks: (A) Docker Desktop on Windows +
+localhost port; (B) optional per-machine hosts → `ops.local`; (C) later
+VPS+Caddy+public DNS (a private dogfood hostname is env-only and is not
+required here). Secrets stay in the vault / orange-prompt — never chat.
 
 This is a standalone web app; it does not deploy with any system of record.
 
@@ -218,16 +232,19 @@ src/
   lib/config.ts          zod-validated environment, fail-closed rules, branding
   lib/auth/              session tokens, access helpers, failure limiter
   lib/sor/               SystemOfRecord contract, deep links, memo cache
-  lib/sor/fixtures/      demo dataset adapter (default)
+  lib/sor/fixtures/      demo dataset adapter (default; fictional 9000–9999 ids)
   lib/sor/tnt-mcp/       reference adapter: MCP client, wire schemas, tests
   proxy.ts               auth redirect + security headers
+docs/public-pack.md           public pack vs dogfood + deny-list (TNT #338)
+docs/DEPLOY_OPS_CONSOLE.md    deploy skill: Desktop+localhost, optional ops.local, later VPS (not WSL2)
 ```
 
 Scripts: `npm run dev`, `npm run build`, `npm start`, `npm test`,
 `npm run lint`, `npm run typecheck`.
 
-`npm test` runs unit tests for config, schemas, sessions, and formatting, plus
-the adapter integration test described above.
+`npm test` runs unit tests for config, schemas, sessions, and formatting, the
+adapter integration test described above, and the #338 public-pack deny-list
+check (`src/lib/public-pack.denylist.test.ts`).
 
 Issue tracking for this repository is TNT: see
 [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) and the pin in
