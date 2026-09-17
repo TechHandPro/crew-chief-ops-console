@@ -135,6 +135,28 @@ describe("public pack deny-list (TNT #338)", () => {
     expect(PUBLIC_PACK_FILES.map(repoPath)).toEqual(
       expect.arrayContaining(["README.md", ".env.example", "src/lib/config.ts", "src/lib/sor/fixtures/data.ts"]),
     );
+    expect(PUBLIC_PACK_FILES.map(repoPath)).not.toContain("docs/DEPLOY_OPS_CONSOLE.md");
+    expect(PUBLIC_PACK_FILES.map(repoPath)).not.toContain("docs/public-pack.md");
+  });
+
+  it("ships the portable Deploy Ops Console skill under docs (TNT #338, cross #331)", () => {
+    const skill = readFileSync(join(REPO_ROOT, "docs/DEPLOY_OPS_CONSOLE.md"), "utf8");
+    for (const needle of [
+      "Docker Compose",
+      "Caddy",
+      "DNS checklist",
+      "orange",
+      "never chat",
+      "Smoke",
+      "/tickets",
+      "/documents",
+      "/vault",
+      "Fail-closed",
+      "TNT_MCP_URL",
+      "#331",
+    ]) {
+      expect(skill, needle).toMatch(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+    }
   });
 
   it("forbids private operator hostnames in public defaults, fixtures, README, and UI copy", () => {

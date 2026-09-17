@@ -182,6 +182,12 @@ Every response carries a nonce-based CSP with `frame-ancestors 'none'`,
 
 ## Deploy
 
+Portable seating (Docker Compose, Caddy/TLS or nginx, DNS, vaulted MCP
+URL + token, tickets/docs/vault smoke, fail-closed if MCP is missing) is the
+**Deploy Ops Console** skill: [`docs/DEPLOY_OPS_CONSOLE.md`](docs/DEPLOY_OPS_CONSOLE.md)
+(TNT #338; cross #331). Secrets stay in the vault / orange-prompt — never
+chat. A private dogfood hostname is env-only and is not required here.
+
 This is a standalone web app; it does not deploy with any system of record.
 
 **Container**
@@ -228,7 +234,8 @@ src/
   lib/sor/fixtures/      demo dataset adapter (default; fictional 9000–9999 ids)
   lib/sor/tnt-mcp/       reference adapter: MCP client, wire schemas, tests
   proxy.ts               auth redirect + security headers
-docs/public-pack.md      public pack vs dogfood + deny-list (TNT #338)
+docs/public-pack.md           public pack vs dogfood + deny-list (TNT #338)
+docs/DEPLOY_OPS_CONSOLE.md    portable deploy skill (Compose, Caddy, DNS, smoke)
 ```
 
 Scripts: `npm run dev`, `npm run build`, `npm start`, `npm test`,

@@ -43,7 +43,8 @@ endpoints.
 
 This document is the operator note that *may* name the dogfood hostname so
 the split is explicit. The automated check does **not** scan this file,
-`docs/TNT_TICKET.md`, or `docs/agents/`.
+[`DEPLOY_OPS_CONSOLE.md`](DEPLOY_OPS_CONSOLE.md) (portable seating skill;
+dogfood path is an example only), `docs/TNT_TICKET.md`, or `docs/agents/`.
 
 ## Automated proof
 
@@ -87,6 +88,13 @@ Follow-up (keep off this PR, keep off **#330** / **#331**):
 TechHand-only operator path (TNT vault + orange-prompt Jeremiah + SOCIAL /
 Grok Bot). That copy should be restated as an optional host-specific
 runbook, not as the public template contract.
+
+## Deploy skill
+
+Portable seating lives in [`DEPLOY_OPS_CONSOLE.md`](DEPLOY_OPS_CONSOLE.md)
+(Docker Compose, Caddy/TLS, DNS, vaulted MCP URL + token, smoke,
+fail-closed). Cross **#331**: that ticket is the later audit surface; this
+skill only seats the console.
 
 ## Out of scope here
 

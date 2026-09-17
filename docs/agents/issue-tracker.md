@@ -24,7 +24,10 @@ Solutions).
 - Shipped: **#322** generic public asset; **#323** org-pin list fix; **#320**
   v1 read-only console.
 - Public pack contract: [`docs/public-pack.md`](../public-pack.md).
-- Soft **#318** parked. Publish stays Jeremiah.
+- Portable deploy skill: [`docs/DEPLOY_OPS_CONSOLE.md`](../DEPLOY_OPS_CONSOLE.md)
+  (Compose, Caddy, DNS, vaulted MCP, smoke; dogfood host is example-only).
+  Cross **#331** (audit surface is later). Soft **#318** parked. Publish stays
+  Jeremiah.
 - Repository link: **linked** on org 1 as of 2026-09-17,
   `git_repository_id=12`. Pass it on organization-scoped writes. Console reads
   still do not depend on it: the adapter pins `organization_id` on every list.

@@ -32,5 +32,6 @@ on org **TechHand Pro Solutions** (org 1).
    `ticket_id=338` for this scrub. Do not post factory/audit work here.
 4. Do not resolve long-lived platform pin tickets (#35) when a slice ships here.
 
-Public pack contract: [`docs/public-pack.md`](public-pack.md). Soft #318 parked.
-Publish stays Jeremiah.
+Public pack contract: [`docs/public-pack.md`](public-pack.md). Portable deploy
+skill: [`docs/DEPLOY_OPS_CONSOLE.md`](DEPLOY_OPS_CONSOLE.md) (cross #331).
+Soft #318 parked. Publish stays Jeremiah.
