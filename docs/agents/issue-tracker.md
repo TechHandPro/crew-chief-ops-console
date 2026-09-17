@@ -18,11 +18,11 @@ Solutions).
 
 ## Current state
 
-- Work ticket: **#338** — *CREW CHIEF edge: public pack vs dogfood scrub*
-  (child of epic **#329**). Standalone dry-run + deny-list; do **not** bundle
-  with **#330** (factory) or **#331** (audit).
-- Shipped: **#322** generic public asset; **#323** org-pin list fix; **#320**
-  v1 read-only console.
+- Work ticket: **#340** — *Overview summary widgets fail schema/read*
+  (post-#338 LIVE). Do **not** bundle with **#330** (factory) or **#331**
+  (audit; PR #6 stays draft). Soft **#318** parked.
+- Shipped: **#338** public pack scrub; **#322** generic public asset;
+  **#323** org-pin + FastMCP unwrap; **#320** v1 read-only console.
 - Public pack contract: [`docs/public-pack.md`](../public-pack.md).
 - Portable deploy skill: [`docs/DEPLOY_OPS_CONSOLE.md`](../DEPLOY_OPS_CONSOLE.md)
   — **not WSL2**. (A) Docker Desktop + localhost; (B) optional `ops.local`;

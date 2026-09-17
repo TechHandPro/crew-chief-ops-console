@@ -85,7 +85,9 @@ const ticketDetailRow = ticketRow.extend({
 });
 
 const ticketListEnvelope = z.looseObject({
-  success: z.literal(true),
+  // Overview / FastMCP subset payloads sometimes omit `success` once the
+  // tickets array is present (TNT #340). Failures still go through assertSuccess.
+  success: z.literal(true).optional(),
   tickets: z.array(ticketRow),
 });
 
@@ -109,7 +111,7 @@ const documentRow = z.looseObject({
 });
 
 const documentListEnvelope = z.looseObject({
-  success: z.literal(true),
+  success: z.literal(true).optional(),
   documents: z.array(documentRow),
 });
 
@@ -179,7 +181,7 @@ const vaultRow = z
   });
 
 const vaultListEnvelope = z.looseObject({
-  success: z.literal(true),
+  success: z.literal(true).optional(),
   entries: z.array(vaultRow),
 });
 
@@ -224,6 +226,9 @@ function toLinked(record: z.infer<typeof linkedRecord>): LinkedRecord | null {
 }
 
 export function parseTicketList(input: unknown): TicketSummary[] {
+  if (Array.isArray(input)) {
+    return z.array(ticketRow).parse(input).map(toTicketSummary);
+  }
   assertSuccess(input);
   return ticketListEnvelope.parse(input).tickets.map(toTicketSummary);
 }
@@ -239,8 +244,15 @@ export function parseTicketDetail(input: unknown): TicketDetail {
 }
 
 export function parseDocumentList(input: unknown): DocumentSummary[] {
+  if (Array.isArray(input)) {
+    return z.array(documentRow).parse(input).map(toDocumentSummary);
+  }
   assertSuccess(input);
-  return documentListEnvelope.parse(input).documents.map((row) => ({
+  return documentListEnvelope.parse(input).documents.map(toDocumentSummary);
+}
+
+function toDocumentSummary(row: z.infer<typeof documentRow>): DocumentSummary {
+  return {
     id: row.id,
     title: row.title,
     category: row.category ?? null,
@@ -252,7 +264,7 @@ export function parseDocumentList(input: unknown): DocumentSummary[] {
     createdAt: row.created_at ?? null,
     updatedAt: row.updated_at ?? null,
     bodyPreview: row.body_preview ?? null,
-  }));
+  };
 }
 
 export function parseDocumentDetail(input: unknown): DocumentDetail {
@@ -269,8 +281,15 @@ export function parseDocumentDetail(input: unknown): DocumentDetail {
 }
 
 export function parseVaultList(input: unknown): VaultEntrySummary[] {
+  if (Array.isArray(input)) {
+    return z.array(vaultRow).parse(input).map(toVaultSummary);
+  }
   assertSuccess(input);
-  return vaultListEnvelope.parse(input).entries.map((row) => ({
+  return vaultListEnvelope.parse(input).entries.map(toVaultSummary);
+}
+
+function toVaultSummary(row: z.infer<typeof vaultRow>): VaultEntrySummary {
+  return {
     id: row.id,
     name: row.name,
     username: row.username ?? null,
@@ -289,5 +308,5 @@ export function parseVaultList(input: unknown): VaultEntrySummary[] {
     asset: toLinked(row.asset),
     domain: toLinked(row.domain),
     network: toLinked(row.network),
-  }));
+  };
 }

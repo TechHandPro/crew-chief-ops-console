@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import type { TntConfig } from "@/lib/config";
 
+import { loadOverviewSummaries, OVERVIEW_DOCUMENT_QUERY, OVERVIEW_TICKET_QUERY } from "../overview";
 import { SystemOfRecordError } from "../provider";
 import { TntMcpProvider } from "./provider";
 
@@ -85,7 +86,12 @@ class FakeTnt {
 
   private buildServer(currentSession: () => string): McpServer {
     const server = new McpServer({ name: "fake-tnt", version: "0.0.0" });
-    const reply = (payload: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(payload) }] });
+    const reply = (payload: unknown) => ({
+      content: [{ type: "text" as const, text: JSON.stringify(payload) }],
+      // LIVE FastMCP wrap on small Overview payloads: extra `success` beside
+      // `result` so a single-key unwrap misses tickets/documents/entries.
+      structuredContent: { result: payload, success: true },
+    });
     const record = (name: string, args: Record<string, unknown>) => this.calls.push({ name, args });
     // Mirrors TNT after #316: an explicit organization_id pin lists without
     // any repository context; otherwise the session must have resolved a
@@ -361,5 +367,32 @@ describe("TntMcpProvider against a fake TNT MCP endpoint", () => {
     await provider.getVaultEntry(143);
 
     expect(fake.calls.map((call) => call.name)).not.toContain("tnt_get_vault_secret");
+  });
+
+  it("loads Overview widgets with open_only + small limits through the FastMCP wrap", async () => {
+    const provider = new TntMcpProvider(configFor(fake));
+
+    const [connection, overview] = await Promise.all([
+      provider.getConnection(),
+      loadOverviewSummaries(provider),
+    ]);
+
+    expect(connection.organizationId).toBe(1);
+    expect(overview.tickets).toEqual({ ok: true, data: [expect.objectContaining({ id: 320 })] });
+    expect(overview.documents).toEqual({ ok: true, data: [expect.objectContaining({ id: 292 })] });
+    expect(overview.vault).toEqual({ ok: true, data: [expect.objectContaining({ id: 143 })] });
+
+    expect(fake.calls.find((call) => call.name === "tnt_list_tickets")?.args).toMatchObject({
+      organization_id: 1,
+      limit: OVERVIEW_TICKET_QUERY.limit,
+      open_only: OVERVIEW_TICKET_QUERY.openOnly,
+    });
+    expect(fake.calls.find((call) => call.name === "tnt_list_documents")?.args).toMatchObject({
+      organization_id: 1,
+      limit: OVERVIEW_DOCUMENT_QUERY.limit,
+    });
+    expect(fake.calls.find((call) => call.name === "tnt_list_vault_entries")?.args).toMatchObject({
+      organization_id: 1,
+    });
   });
 });
